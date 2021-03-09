@@ -1,0 +1,43 @@
+POST http://localhost:8080/errors
+Content-Type: application/json
+
+{
+  "name": "Sentry error",
+  "message": "Some message",
+  "tags": [
+    "error",
+    "production"
+  ]
+}
+
+> {% client.global.set("sessionId", response.body.toString()) %}
+
+###
+
+GET http://localhost:8080/sessions/{{sessionId}}
+
+> {% client.global.set("runbookId", response.body.Runbook.RunbookId) %}
+
+###
+
+GET http://localhost:8080/runbooks/{{runbookId}}
+
+
+> {%
+client.global.set("stepId1", response.body.Steps[0].Id)
+client.global.set("stepId2", response.body.Steps[1].Id)
+client.global.set("stepId3", response.body.Steps[2].Id)
+ %}
+
+
+###
+
+GET http://localhost:8080/steps/{{stepId1}}
+
+###
+
+GET http://localhost:8080/steps/{{stepId2}}
+
+###
+
+GET http://localhost:8080/steps/{{stepId3}}
