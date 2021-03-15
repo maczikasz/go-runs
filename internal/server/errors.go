@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-//go:generate moq -out errors_test.go . SessionFromErrorCreator
+//go:generate moq -out mocks/errors_mock.go -skip-ensure . SessionFromErrorCreator
 
 //TODO shit name
 type SessionFromErrorCreator interface {

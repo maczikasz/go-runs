@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-//go:generate moq -out runbooks_details_test.go . RunbookStepDetailsFinder
+//go:generate moq -out mocks/runbook_mocks.go -skip-ensure . RunbookStepDetailsFinder RunbookDetailsFinder
 
 type RunbookStepDetailsFinder interface {
 	FindRunbookStepDetailsById(id string) (model.RunbookStepDetails, error)
@@ -40,7 +40,6 @@ func (r runbookStepDetailsHandler) ServeHTTP(writer http.ResponseWriter, request
 	}
 }
 
-//go:generate moq -out runbooks_test.go . RunbookDetailsFinder
 
 type RunbookDetailsFinder interface {
 	FindRunbookDetailsById(id string) (model.RunbookDetails, error)

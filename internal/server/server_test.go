@@ -4,6 +4,7 @@ import (
 	bytes2 "bytes"
 	"encoding/json"
 	"github.com/maczikasz/go-runs/internal/model"
+	server "github.com/maczikasz/go-runs/internal/server/mocks"
 	"github.com/maczikasz/go-runs/internal/test_utils"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
@@ -19,7 +20,7 @@ var sessionStore = make(map[string]model.Session)
 func TestStartHttpServer(t *testing.T) {
 
 	testContext := StartupContext{
-		RunbookDetailsFinder: &RunbookDetailsFinderMock{
+		RunbookDetailsFinder: &server.RunbookDetailsFinderMock{
 			FindRunbookDetailsByIdFunc: func(id string) (model.RunbookDetails, error) {
 				if id == "test-1" {
 					return model.RunbookDetails{Steps: []model.RunbookStepSummary{
@@ -33,7 +34,7 @@ func TestStartHttpServer(t *testing.T) {
 				return model.RunbookDetails{}, model.CreateDataNotFoundError("runbook_details", id)
 			},
 		},
-		SessionStore: &SessionStoreMock{
+		SessionStore: &server.SessionStoreMock{
 			GetSessionFunc: func(s string) (model.Session, error) {
 				session, found := sessionStore[s]
 
@@ -44,7 +45,7 @@ func TestStartHttpServer(t *testing.T) {
 				return session, nil
 			},
 		},
-		RunbookStepDetailsFinder: &RunbookStepDetailsFinderMock{
+		RunbookStepDetailsFinder: &server.RunbookStepDetailsFinderMock{
 			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepDetails, error) {
 				if id == "rbs1" {
 					return model.RunbookStepDetails{
@@ -56,7 +57,7 @@ func TestStartHttpServer(t *testing.T) {
 				return model.RunbookStepDetails{}, model.CreateDataNotFoundError("step_details", id)
 			},
 		},
-		SessionFromErrorCreator: &SessionFromErrorCreatorMock{
+		SessionFromErrorCreator: &server.SessionFromErrorCreatorMock{
 			GetSessionForErrorFunc: func(e model.Error) (string, error) {
 				if e.Name == "Test Error 1" {
 					sessionStore["s1"] = model.Session{

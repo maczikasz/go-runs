@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-//go:generate moq -out sessions_test.go . SessionStore
+//go:generate moq -out mocks/sessions_mock.go -skip-ensure . SessionStore
 
 type SessionStore interface {
 	GetSession(s string) (model.Session, error)

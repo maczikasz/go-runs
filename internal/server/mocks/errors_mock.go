@@ -8,10 +8,6 @@ import (
 	"sync"
 )
 
-// Ensure, that SessionFromErrorCreatorMock does implement SessionFromErrorCreator.
-// If this is not the case, regenerate this file with moq.
-var _ SessionFromErrorCreator = &SessionFromErrorCreatorMock{}
-
 // SessionFromErrorCreatorMock is a mock implementation of SessionFromErrorCreator.
 //
 // 	func TestSomethingThatUsesSessionFromErrorCreator(t *testing.T) {

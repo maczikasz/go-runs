@@ -8,10 +8,6 @@ import (
 	"sync"
 )
 
-// Ensure, that SessionStoreMock does implement SessionStore.
-// If this is not the case, regenerate this file with moq.
-var _ SessionStore = &SessionStoreMock{}
-
 // SessionStoreMock is a mock implementation of SessionStore.
 //
 // 	func TestSomethingThatUsesSessionStore(t *testing.T) {

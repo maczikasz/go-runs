@@ -8,10 +8,6 @@ import (
 	"sync"
 )
 
-// Ensure, that RunbookStepDetailsFinderMock does implement RunbookStepDetailsFinder.
-// If this is not the case, regenerate this file with moq.
-var _ RunbookStepDetailsFinder = &RunbookStepDetailsFinderMock{}
-
 // RunbookStepDetailsFinderMock is a mock implementation of RunbookStepDetailsFinder.
 //
 // 	func TestSomethingThatUsesRunbookStepDetailsFinder(t *testing.T) {
@@ -70,5 +66,66 @@ func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsByIdCalls() []st
 	mock.lockFindRunbookStepDetailsById.RLock()
 	calls = mock.calls.FindRunbookStepDetailsById
 	mock.lockFindRunbookStepDetailsById.RUnlock()
+	return calls
+}
+
+// RunbookDetailsFinderMock is a mock implementation of RunbookDetailsFinder.
+//
+// 	func TestSomethingThatUsesRunbookDetailsFinder(t *testing.T) {
+//
+// 		// make and configure a mocked RunbookDetailsFinder
+// 		mockedRunbookDetailsFinder := &RunbookDetailsFinderMock{
+// 			FindRunbookDetailsByIdFunc: func(id string) (model.RunbookDetails, error) {
+// 				panic("mock out the FindRunbookDetailsById method")
+// 			},
+// 		}
+//
+// 		// use mockedRunbookDetailsFinder in code that requires RunbookDetailsFinder
+// 		// and then make assertions.
+//
+// 	}
+type RunbookDetailsFinderMock struct {
+	// FindRunbookDetailsByIdFunc mocks the FindRunbookDetailsById method.
+	FindRunbookDetailsByIdFunc func(id string) (model.RunbookDetails, error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// FindRunbookDetailsById holds details about calls to the FindRunbookDetailsById method.
+		FindRunbookDetailsById []struct {
+			// ID is the id argument value.
+			ID string
+		}
+	}
+	lockFindRunbookDetailsById sync.RWMutex
+}
+
+// FindRunbookDetailsById calls FindRunbookDetailsByIdFunc.
+func (mock *RunbookDetailsFinderMock) FindRunbookDetailsById(id string) (model.RunbookDetails, error) {
+	if mock.FindRunbookDetailsByIdFunc == nil {
+		panic("RunbookDetailsFinderMock.FindRunbookDetailsByIdFunc: method is nil but RunbookDetailsFinder.FindRunbookDetailsById was just called")
+	}
+	callInfo := struct {
+		ID string
+	}{
+		ID: id,
+	}
+	mock.lockFindRunbookDetailsById.Lock()
+	mock.calls.FindRunbookDetailsById = append(mock.calls.FindRunbookDetailsById, callInfo)
+	mock.lockFindRunbookDetailsById.Unlock()
+	return mock.FindRunbookDetailsByIdFunc(id)
+}
+
+// FindRunbookDetailsByIdCalls gets all the calls that were made to FindRunbookDetailsById.
+// Check the length with:
+//     len(mockedRunbookDetailsFinder.FindRunbookDetailsByIdCalls())
+func (mock *RunbookDetailsFinderMock) FindRunbookDetailsByIdCalls() []struct {
+	ID string
+} {
+	var calls []struct {
+		ID string
+	}
+	mock.lockFindRunbookDetailsById.RLock()
+	calls = mock.calls.FindRunbookDetailsById
+	mock.lockFindRunbookDetailsById.RUnlock()
 	return calls
 }
