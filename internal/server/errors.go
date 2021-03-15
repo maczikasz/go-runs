@@ -2,15 +2,21 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/maczikasz/go-runs/internal/errors"
 	"github.com/maczikasz/go-runs/internal/model"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
 
+//go:generate moq -out errors_test.go . SessionFromErrorCreator
+
+//TODO shit name
+type SessionFromErrorCreator interface {
+	GetSessionForError(e model.Error) (string, error)
+}
+
 type incomingErrorHandler struct {
-	errorManager errors.ErrorManager
+	errorHandler SessionFromErrorCreator
 }
 
 func (i incomingErrorHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -30,7 +36,7 @@ func (i incomingErrorHandler) ServeHTTP(writer http.ResponseWriter, request *htt
 		log.Tracef("Failed to parse json %s \n reason", err.Error())
 		http.Error(writer, "failed to parse json", 500)
 	}
-	sessionId, err := i.errorManager.HandleIncomingError(e)
+	sessionId, err := i.errorHandler.GetSessionForError(e)
 
 	if err != nil {
 		log.Tracef("Failed to parse json %s \n reason", err.Error())

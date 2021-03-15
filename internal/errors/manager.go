@@ -2,27 +2,29 @@ package errors
 
 import (
 	"github.com/maczikasz/go-runs/internal/model"
-	"github.com/maczikasz/go-runs/internal/runbooks"
-	"github.com/maczikasz/go-runs/internal/sessions"
 	"github.com/pkg/errors"
 )
 
-type ErrorManager interface {
-	HandleIncomingError(e model.Error) (string, error)
+type SessionCreator interface {
+	CreateNewSessionForRunbook(runbook model.Runbook) string
+}
+
+type RunbookFinder interface {
+	FindRunbookForError(e model.Error) (model.Runbook, error)
 }
 
 type DefaultErrorManager struct {
-	session  sessions.SessionManager
-	runbooks runbooks.RunbookManager
+	session  SessionCreator
+	runbooks RunbookFinder
 }
 
-func WithManagers(manager *DefaultErrorManager, sessionManager sessions.SessionManager, runbookManager runbooks.RunbookManager) *DefaultErrorManager {
+func WithManagers(manager *DefaultErrorManager, sessionManager SessionCreator, runbookManager RunbookFinder) *DefaultErrorManager {
 	manager.session = sessionManager
 	manager.runbooks = runbookManager
 	return manager
 }
 
-func (manager DefaultErrorManager) HandleIncomingError(e model.Error) (string, error) {
+func (manager DefaultErrorManager) GetSessionForError(e model.Error) (string, error) {
 	runbook, err := manager.runbooks.FindRunbookForError(e)
 
 	if err != nil {

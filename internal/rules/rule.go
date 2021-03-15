@@ -11,6 +11,10 @@ type Rule interface {
 	Matches(error model.Error) bool
 }
 
+type stringMatcher interface {
+	matches(value string) bool
+}
+
 type MessageRule struct {
 	innerMatcher stringMatcher
 }

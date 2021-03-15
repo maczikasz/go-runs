@@ -2,12 +2,7 @@ package rules
 
 import (
 	"fmt"
-	"github.com/maczikasz/go-runs/internal/model"
 )
-
-type RuleManager interface {
-	FindMatch(error2 model.Error) (string, bool)
-}
 
 type RuleRunbookPair struct {
 	RunbookId string

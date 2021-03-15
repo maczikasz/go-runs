@@ -2,17 +2,23 @@ package server
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/maczikasz/go-runs/internal/runbooks"
+	"github.com/maczikasz/go-runs/internal/model"
+	"github.com/maczikasz/go-runs/internal/util"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
+//go:generate moq -out runbooks_details_test.go . RunbookStepDetailsFinder
+
+type RunbookStepDetailsFinder interface {
+	FindRunbookStepDetailsById(id string) (model.RunbookStepDetails, error)
+}
+
 type runbookStepDetailsHandler struct {
-	runbookManager runbooks.RunbookManager
+	runbookManager RunbookStepDetailsFinder
 }
 
 func (r runbookStepDetailsHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-
 
 	if request.Method == http.MethodOptions {
 		return
@@ -23,23 +29,28 @@ func (r runbookStepDetailsHandler) ServeHTTP(writer http.ResponseWriter, request
 
 	stepDetails, err := r.runbookManager.FindRunbookStepDetailsById(stepId)
 
-	err = HandleDataError(writer, request, err)
+	err = util.HandleDataError(writer, request, err)
 	if err != nil {
 		return
 	}
 
-	err = WriteJsonResponse(writer, stepDetails)
+	err = util.WriteJsonResponse(writer, stepDetails)
 	if err != nil {
 		log.Warnf("failed to write to response %s", err)
 	}
 }
 
+//go:generate moq -out runbooks_test.go . RunbookDetailsFinder
+
+type RunbookDetailsFinder interface {
+	FindRunbookDetailsById(id string) (model.RunbookDetails, error)
+}
+
 type runbookHandler struct {
-	runbookManager runbooks.RunbookManager
+	runbookDetailsFinder RunbookDetailsFinder
 }
 
 func (r runbookHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-
 
 	if request.Method == http.MethodOptions {
 		return
@@ -48,13 +59,13 @@ func (r runbookHandler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	vars := mux.Vars(request)
 	runbookId := vars["runbookId"]
 
-	runbookDetails, err := r.runbookManager.FindRunbookDetailsById(runbookId)
-	err = HandleDataError(writer, request, err)
+	runbookDetails, err := r.runbookDetailsFinder.FindRunbookDetailsById(runbookId)
+	err = util.HandleDataError(writer, request, err)
 	if err != nil {
 		return
 	}
 
-	err = WriteJsonResponse(writer, runbookDetails)
+	err = util.WriteJsonResponse(writer, runbookDetails)
 
 	if err != nil {
 		log.Warnf("failed to write to response %s", err)

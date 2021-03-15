@@ -1,4 +1,4 @@
-package server
+package infra
 
 import (
 	"net/http"

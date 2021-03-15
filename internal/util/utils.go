@@ -1,4 +1,4 @@
-package server
+package util
 
 import (
 	"encoding/json"
@@ -56,3 +56,11 @@ func HandleDataError(writer http.ResponseWriter, request *http.Request, err erro
 	return nil
 }
 
+func ToSet(origins []string) (result map[string]bool) {
+	result = make(map[string]bool)
+	for _, v := range origins {
+		result[v] = true
+	}
+
+	return
+}

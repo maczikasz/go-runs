@@ -1,7 +1,8 @@
-package server
+package infra
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/maczikasz/go-runs/internal/util"
 	. "github.com/smartystreets/goconvey/convey"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +21,7 @@ func TestCorrectCORSHeaders(t *testing.T) {
 	Convey("Given http router with CORS middleware", t, func() {
 		router := mux.NewRouter()
 		router.Handle("/test", Return200Handler{})
-		middleware := CORSPreflightOriginMiddleware{AcceptedOrigins: toSet([]string{"test:1234"})}
+		middleware := CORSPreflightOriginMiddleware{AcceptedOrigins: util.ToSet([]string{"test:1234"})}
 		router.Use(middleware.Middleware)
 
 		Convey("When Origin is specified and is http", func() {

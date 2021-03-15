@@ -1,14 +1,17 @@
-package test_data
+package runbooks
 
 import (
 	"fmt"
 	"github.com/maczikasz/go-runs/internal/model"
-	"github.com/maczikasz/go-runs/internal/rules"
 	log "github.com/sirupsen/logrus"
 )
 
+type RuleMatcher interface {
+	FindMatch(e model.Error) (string, bool)
+}
+
 type FakeRunbookManager struct {
-	RuleManager rules.RuleManager
+	RuleManager RuleMatcher
 }
 
 func (r FakeRunbookManager) FindRunbookForError(e model.Error) (model.Runbook, error) {

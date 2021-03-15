@@ -25,6 +25,10 @@ func (s FakeSessionManager) CreateNewSessionForRunbook(r model.Runbook) string {
 	return sessionId
 }
 
+func NewInMemorySessionManager() *FakeSessionManager {
+	return &FakeSessionManager{sessions: map[string]model.Session{}}
+}
+
 func (s FakeSessionManager) GetSession(sessionId string) (model.Session, error) {
 	res, ok := s.sessions[sessionId]
 

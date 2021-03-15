@@ -3,42 +3,74 @@ package server
 import (
 	bytes2 "bytes"
 	"encoding/json"
-	"github.com/maczikasz/go-runs/internal/context"
-	"github.com/maczikasz/go-runs/internal/errors"
 	"github.com/maczikasz/go-runs/internal/model"
-	"github.com/maczikasz/go-runs/internal/rules"
-	"github.com/maczikasz/go-runs/internal/runbooks/test_data"
-	"github.com/maczikasz/go-runs/internal/sessions"
 	"github.com/maczikasz/go-runs/internal/test_utils"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
-var config = initMatchers()
-
-func initMatchers() *rules.MatcherConfig {
-	config := rules.NewMatcherConfig()
-	config = config.AddNameExactMatchers(map[string]rules.ExactMatcher{"test-1": {MatchAgainst: "Test Error 1"}})
-	config = config.AddNameContainsMatchers(map[string]rules.ContainsMatcher{"test-1-2": {MatchAgainst: "Test Error"}})
-	config = config.AddMessageContainsMatchers(map[string]rules.ContainsMatcher{"test-2": {MatchAgainst: "message"}})
-	config = config.AddTagExactMatchers(map[string]rules.ExactMatcher{"test-3": {MatchAgainst: "match"}})
-	return config
-}
-
-var sessionManager = sessions.NewInMemorySessionManager()
-var runbookManager = test_data.FakeRunbookManager{RuleManager: rules.FromMatcherConfig(config)}
-var errorManager = errors.DefaultErrorManager{}
-var testContext = context.StartupContext{
-	RuleManager:    rules.FromMatcherConfig(config),
-	ErrorManager:   errors.WithManagers(&errorManager, sessionManager, runbookManager),
-	SessionManager: sessionManager,
-	RunbookManager: runbookManager,
-}
+var sessionStore = make(map[string]model.Session)
 
 func TestStartHttpServer(t *testing.T) {
+
+	testContext := StartupContext{
+		RunbookDetailsFinder: &RunbookDetailsFinderMock{
+			FindRunbookDetailsByIdFunc: func(id string) (model.RunbookDetails, error) {
+				if id == "test-1" {
+					return model.RunbookDetails{Steps: []model.RunbookStepSummary{
+						{
+							Id:      "rbs1",
+							Summary: "Test step 1",
+							Type:    "Workaround",
+						},
+					}}, nil
+				}
+				return model.RunbookDetails{}, model.CreateDataNotFoundError("runbook_details", id)
+			},
+		},
+		SessionStore: &SessionStoreMock{
+			GetSessionFunc: func(s string) (model.Session, error) {
+				session, found := sessionStore[s]
+
+				if !found {
+					return model.Session{}, model.CreateDataNotFoundError("session", s)
+				}
+
+				return session, nil
+			},
+		},
+		RunbookStepDetailsFinder: &RunbookStepDetailsFinderMock{
+			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepDetails, error) {
+				if id == "rbs1" {
+					return model.RunbookStepDetails{
+						Summary:  "Test workaround 1",
+						Type:     "Workaround",
+						Markdown: "Test MD 1",
+					}, nil
+				}
+				return model.RunbookStepDetails{}, model.CreateDataNotFoundError("step_details", id)
+			},
+		},
+		SessionFromErrorCreator: &SessionFromErrorCreatorMock{
+			GetSessionForErrorFunc: func(e model.Error) (string, error) {
+				if e.Name == "Test Error 1" {
+					sessionStore["s1"] = model.Session{
+						Runbook:   model.Runbook{Id: "test-1"},
+						SessionId: "s1",
+						Stats:     model.SessionStatistics{CompletedSteps: map[string]time.Time{}},
+					}
+					return "s1", nil
+				}
+
+				return "", errors.New("No match for error")
+			},
+		},
+	}
 
 	Convey("Given http router is setup with fake context", t, func() {
 		router := setupRouter(&testContext, []string{})
@@ -82,14 +114,13 @@ func TestStartHttpServer(t *testing.T) {
 					So(session.Runbook.Id, ShouldEqual, "test-1")
 				})
 
-				var details model.RunbookDetails
-
 				Convey("When the details of the runbook are queried", func() {
 					r, _ := http.NewRequest(http.MethodGet, "/runbooks/"+session.Runbook.Id, bytes2.NewReader(bytes))
 					w := httptest.NewRecorder()
 
 					router.ServeHTTP(w, r)
 
+					var details model.RunbookDetails
 					body, _ := ioutil.ReadAll(w.Body)
 
 					_ = json.Unmarshal(body, &details)

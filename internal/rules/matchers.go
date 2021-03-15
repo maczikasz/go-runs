@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-type stringMatcher interface {
-	matches(value string) bool
-}
-
 type RegexMatcher struct {
 	MatchAgainst *regexp.Regexp
 }

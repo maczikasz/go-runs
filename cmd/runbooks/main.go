@@ -1,10 +1,9 @@
 package main
 
 import (
-	"github.com/maczikasz/go-runs/internal/context"
 	"github.com/maczikasz/go-runs/internal/errors"
 	"github.com/maczikasz/go-runs/internal/rules"
-	"github.com/maczikasz/go-runs/internal/runbooks/test_data"
+	"github.com/maczikasz/go-runs/internal/runbooks"
 	"github.com/maczikasz/go-runs/internal/server"
 	"github.com/maczikasz/go-runs/internal/sessions"
 	log "github.com/sirupsen/logrus"
@@ -27,16 +26,14 @@ func main() {
 	config := initMatchers()
 	ruleManager := rules.FromMatcherConfig(config)
 	sessionManager := sessions.NewInMemorySessionManager()
-	runbookManager := test_data.FakeRunbookManager{RuleManager: ruleManager}
+	runbookManager := runbooks.FakeRunbookManager{RuleManager: ruleManager}
 	errorManager := errors.DefaultErrorManager{}
-	startupContext := context.StartupContext{
-		ErrorManager:   errors.WithManagers(&errorManager, sessionManager, runbookManager),
-		SessionManager: sessionManager,
-		RunbookManager: runbookManager,
-		RuleManager:    ruleManager,
+	startupContext := server.StartupContext{
+		RunbookDetailsFinder:     runbookManager,
+		SessionStore:             sessionManager,
+		RunbookStepDetailsFinder: runbookManager,
+		SessionFromErrorCreator:  errorManager,
 	}
-
-	startupContext.Validate()
 
 	server.StartHttpServer(&wg, &startupContext)
 	wg.Wait()

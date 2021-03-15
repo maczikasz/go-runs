@@ -4,7 +4,7 @@ import (
 	"github.com/maczikasz/go-runs/internal/model"
 )
 
-type priorityRuleManager struct {
+type PriorityRuleManager struct {
 	nameMatchers    []RuleRunbookPair
 	messageMatchers []RuleRunbookPair
 	tagMatchers     []RuleRunbookPair
@@ -120,7 +120,7 @@ func NewMatcherConfig() *MatcherConfig {
 	}
 }
 
-func FromMatcherConfig(c *MatcherConfig) RuleManager {
+func FromMatcherConfig(c *MatcherConfig) *PriorityRuleManager {
 	var orderedNameMatchers []RuleRunbookPair
 	var orderedMessageMatchers []RuleRunbookPair
 	var orderedTagMatchers []RuleRunbookPair
@@ -137,7 +137,7 @@ func FromMatcherConfig(c *MatcherConfig) RuleManager {
 	orderedTagMatchers = append(orderedTagMatchers, c.tagMatchers[CONTAINS]...)
 	orderedTagMatchers = append(orderedTagMatchers, c.tagMatchers[REGEX]...)
 
-	return priorityRuleManager{
+	return &PriorityRuleManager{
 		nameMatchers:    orderedNameMatchers,
 		messageMatchers: orderedMessageMatchers,
 		tagMatchers:     orderedTagMatchers,
@@ -145,7 +145,7 @@ func FromMatcherConfig(c *MatcherConfig) RuleManager {
 
 }
 
-func (p priorityRuleManager) FindMatch(error2 model.Error) (string, bool) {
+func (p PriorityRuleManager) FindMatch(error2 model.Error) (string, bool) {
 	matched, found := findMatcher(error2, p.nameMatchers)
 	if found {
 		return matched.RunbookId, true
