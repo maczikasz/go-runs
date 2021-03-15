@@ -9,36 +9,39 @@ import (
 	"net/http"
 )
 
-
 type incomingErrorHandler struct {
 	errorManager errors.ErrorManager
 }
 
-func (i incomingErrorHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	bytes, err := ioutil.ReadAll(req.Body)
+func (i incomingErrorHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+
+	if request.Method == http.MethodOptions {
+		return
+	}
+
+	bytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.Trace("Failed to read body of http request")
-		http.Error(res, "failed to read body", 500)
+		http.Error(writer, "failed to read body", 500)
 	}
 	e := model.Error{}
 	err = json.Unmarshal(bytes, &e)
 	if err != nil {
-		log.Tracef("Failed to parse json %s \n reason")
-		http.Error(res, "failed to parse json", 500)
+		log.Tracef("Failed to parse json %s \n reason", err.Error())
+		http.Error(writer, "failed to parse json", 500)
 	}
 	sessionId, err := i.errorManager.HandleIncomingError(e)
 
 	if err != nil {
-		log.Tracef("Failed to parse json %s \n reason")
+		log.Tracef("Failed to parse json %s \n reason", err.Error())
 		//TOOD 404? 400?
-		http.Error(res, "failed to find proper runbook", 500)
+		http.Error(writer, "failed to find proper runbook", 500)
 	}
 
-	_, err = res.Write([]byte(sessionId))
+	_, err = writer.Write([]byte(sessionId))
 
 	if err != nil {
 		log.Warn("failed to write json to output")
 	}
 
 }
-

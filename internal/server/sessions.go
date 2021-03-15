@@ -12,6 +12,12 @@ type sessionHandler struct {
 }
 
 func (s sessionHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+
+
+	if request.Method == http.MethodOptions {
+		return
+	}
+
 	vars := mux.Vars(request)
 	session, err := s.sessionManager.GetSession(vars["sessionId"])
 

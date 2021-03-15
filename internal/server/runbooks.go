@@ -12,6 +12,12 @@ type runbookStepDetailsHandler struct {
 }
 
 func (r runbookStepDetailsHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+
+
+	if request.Method == http.MethodOptions {
+		return
+	}
+
 	vars := mux.Vars(request)
 	stepId := vars["stepId"]
 
@@ -28,12 +34,17 @@ func (r runbookStepDetailsHandler) ServeHTTP(writer http.ResponseWriter, request
 	}
 }
 
-
 type runbookHandler struct {
 	runbookManager runbooks.RunbookManager
 }
 
 func (r runbookHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+
+
+	if request.Method == http.MethodOptions {
+		return
+	}
+
 	vars := mux.Vars(request)
 	runbookId := vars["runbookId"]
 

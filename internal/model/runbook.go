@@ -1,19 +1,21 @@
 package model
 
 type Runbook struct {
-	RunbookId string
+	Id string `json:"id"`
 }
 
 type RunbookDetails struct {
-	Steps []RunbookStepSummary
+	Steps []RunbookStepSummary `json:"steps"`
 }
 
 type RunbookStepSummary struct {
-	Id       string
-	Summary  string
-	Type     string
+	Id      string `json:"id"`
+	Summary string `json:"summary"`
+	Type    string `json:"type"`
 }
 
 type RunbookStepDetails struct {
-	Markdown string
+	Summary  string `json:"summary"`
+	Type     string `json:"type"`
+	Markdown string `json:"markdown"`
 }

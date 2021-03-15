@@ -16,7 +16,12 @@ Content-Type: application/json
 
 GET http://localhost:8080/sessions/{{sessionId}}
 
-> {% client.global.set("runbookId", response.body.Runbook.RunbookId) %}
+> {%
+     client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+     client.global.set("runbookId", response.body.runbook.id)
+%}
 
 ###
 
@@ -24,20 +29,43 @@ GET http://localhost:8080/runbooks/{{runbookId}}
 
 
 > {%
-client.global.set("stepId1", response.body.Steps[0].Id)
-client.global.set("stepId2", response.body.Steps[1].Id)
-client.global.set("stepId3", response.body.Steps[2].Id)
+     client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+client.global.set("stepId1", response.body.steps[0].id)
+client.global.set("stepId2", response.body.steps[1].id)
+client.global.set("stepId3", response.body.steps[2].id)
  %}
 
 
 ###
 
-GET http://localhost:8080/steps/{{stepId1}}
+GET http://localhost:8080/details/{{stepId1}}
+
+> {%
+      client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+    %}
 
 ###
 
-GET http://localhost:8080/steps/{{stepId2}}
+GET http://localhost:8080/details/{{stepId2}}
+
+
+> {%
+      client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+    %}
 
 ###
 
-GET http://localhost:8080/steps/{{stepId3}}
+GET http://localhost:8080/details/{{stepId3}}
+
+
+> {%
+      client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+    %}

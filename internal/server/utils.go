@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/maczikasz/go-runs/internal/runbooks"
+	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -30,7 +30,6 @@ func WriteJsonResponse(r http.ResponseWriter, value interface{}) error {
 	return nil
 }
 
-
 // Handles an error where we fetch data from a database
 // Will write status 404 if the DataNotFoundError is passed
 // Will write status 500 if any other error is returned
@@ -45,7 +44,7 @@ func WriteJsonResponse(r http.ResponseWriter, value interface{}) error {
 // // use the data
 func HandleDataError(writer http.ResponseWriter, request *http.Request, err error) error {
 	if err != nil {
-		if dnfError, ok := err.(*runbooks.DataNotFoundError); ok {
+		if dnfError, ok := err.(*model.DataNotFoundError); ok {
 			log.Debug(dnfError)
 			http.NotFound(writer, request)
 		} else {
@@ -56,3 +55,4 @@ func HandleDataError(writer http.ResponseWriter, request *http.Request, err erro
 	}
 	return nil
 }
+
