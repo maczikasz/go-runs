@@ -1,11 +1,9 @@
 package server
 
 import (
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/maczikasz/go-runs/internal/util"
-	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 //go:generate moq -out mocks/runbook_mocks.go -skip-ensure . RunbookStepDetailsFinder RunbookDetailsFinder
@@ -18,28 +16,19 @@ type runbookStepDetailsHandler struct {
 	runbookManager RunbookStepDetailsFinder
 }
 
-func (r runbookStepDetailsHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (r runbookStepDetailsHandler) Serve(context *gin.Context) {
 
-	if request.Method == http.MethodOptions {
-		return
-	}
-
-	vars := mux.Vars(request)
-	stepId := vars["stepId"]
+	stepId := context.Param("stepId")
 
 	stepDetails, err := r.runbookManager.FindRunbookStepDetailsById(stepId)
 
-	err = util.HandleDataError(writer, request, err)
+	err = util.HandleDataError(context, err)
 	if err != nil {
 		return
 	}
 
-	err = util.WriteJsonResponse(writer, stepDetails)
-	if err != nil {
-		log.Warnf("failed to write to response %s", err)
-	}
+	context.JSON(200, stepDetails)
 }
-
 
 type RunbookDetailsFinder interface {
 	FindRunbookDetailsById(id string) (model.RunbookDetails, error)
@@ -49,24 +38,15 @@ type runbookHandler struct {
 	runbookDetailsFinder RunbookDetailsFinder
 }
 
-func (r runbookHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (r runbookHandler) Serve(context *gin.Context) {
 
-	if request.Method == http.MethodOptions {
-		return
-	}
-
-	vars := mux.Vars(request)
-	runbookId := vars["runbookId"]
+	runbookId := context.Param("runbookId")
 
 	runbookDetails, err := r.runbookDetailsFinder.FindRunbookDetailsById(runbookId)
-	err = util.HandleDataError(writer, request, err)
+	err = util.HandleDataError(context, err)
 	if err != nil {
 		return
 	}
 
-	err = util.WriteJsonResponse(writer, runbookDetails)
-
-	if err != nil {
-		log.Warnf("failed to write to response %s", err)
-	}
+	context.JSON(200, runbookDetails)
 }

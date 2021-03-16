@@ -27,8 +27,12 @@ func main() {
 	ruleManager := rules.FromMatcherConfig(config)
 	sessionManager := sessions.NewInMemorySessionManager()
 	runbookManager := runbooks.FakeRunbookManager{RuleManager: ruleManager}
-	errorManager := errors.DefaultErrorManager{}
+	errorManager := errors.DefaultErrorManager{
+		SessionCreator: sessionManager,
+		RunbookFinder:  runbookManager,
+	}
 	startupContext := server.StartupContext{
+
 		RunbookDetailsFinder:     runbookManager,
 		SessionStore:             sessionManager,
 		RunbookStepDetailsFinder: runbookManager,

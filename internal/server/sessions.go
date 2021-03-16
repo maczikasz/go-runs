@@ -1,11 +1,9 @@
 package server
 
 import (
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/maczikasz/go-runs/internal/util"
-	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 //go:generate moq -out mocks/sessions_mock.go -skip-ensure . SessionStore
@@ -18,24 +16,15 @@ type sessionHandler struct {
 	sessionStore SessionStore
 }
 
-func (s sessionHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (s sessionHandler) Serve(context *gin.Context) {
 
-	if request.Method == http.MethodOptions {
-		return
-	}
+	sessionId := context.Param("sessionId")
+	session, err := s.sessionStore.GetSession(sessionId)
 
-	vars := mux.Vars(request)
-	session, err := s.sessionStore.GetSession(vars["sessionId"])
-
-	err = util.HandleDataError(writer, request, err)
+	err = util.HandleDataError(context, err)
 	if err != nil {
 		return
 	}
 
-	err = util.WriteJsonResponse(writer, session)
-
-	if err != nil {
-		log.Warnf("Failed to find session %s", err)
-	}
-
+	context.JSON(200, session)
 }

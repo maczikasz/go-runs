@@ -1,22 +1,17 @@
 package server
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/maczikasz/go-runs/internal/infra"
-	"github.com/maczikasz/go-runs/internal/util"
-	log "github.com/sirupsen/logrus"
-	"github.com/urfave/negroni"
-	"net/http"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"sync"
 )
 
 func StartHttpServer(wg *sync.WaitGroup, context *StartupContext) {
 	defer wg.Done()
-	r := setupRouter(context, []string{"localhost:3000"})
+	r := setupRouter(context, []string{"http://localhost:3000"})
 
-	http.Handle("/", r)
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	//TODO error handle
+	_ = r.Run()
 }
 
 type StartupContext struct {
@@ -26,23 +21,29 @@ type StartupContext struct {
 	SessionFromErrorCreator  SessionFromErrorCreator
 }
 
-func setupRouter(context *StartupContext, acceptedOrigins []string) http.Handler {
-	r := mux.NewRouter()
+func setupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine {
+	r := gin.Default()
 
+	config := cors.Config{
+		AllowHeaders: []string{"Content-type", "Origin"},
+		AllowMethods: []string{"POST", "GET"},
+	}
+	if len(acceptedOrigins) == 0 {
+		config.AllowAllOrigins = true
+	} else {
+		config.AllowOrigins = acceptedOrigins
+	}
+
+	r.Use(cors.New(config))
+	
 	errorHandler := incomingErrorHandler{errorHandler: context.SessionFromErrorCreator}
 	sessionHandler := sessionHandler{sessionStore: context.SessionStore}
 	runbookHandler := runbookHandler{runbookDetailsFinder: context.RunbookDetailsFinder}
 	runbookStepDetailsHandler := runbookStepDetailsHandler{context.RunbookStepDetailsFinder}
-	r.Handle("/errors", errorHandler).Methods(http.MethodPost, http.MethodOptions)
-	r.Handle("/sessions/{sessionId}", sessionHandler).Methods(http.MethodGet, http.MethodOptions)
-	r.Handle("/runbooks/{runbookId}", runbookHandler).Methods(http.MethodGet, http.MethodOptions)
-	r.Handle("/details/{stepId}", runbookStepDetailsHandler).Methods(http.MethodGet, http.MethodOptions)
+	r.POST("/errors", errorHandler.Serve)
+	r.GET("/sessions/:sessionId", sessionHandler.Serve)
+	r.GET("/runbooks/:runbookId", runbookHandler.Serve)
+	r.GET("/details/:stepId", runbookStepDetailsHandler.Serve)
 
-	r.Use(mux.CORSMethodMiddleware(r))
-	middleware := infra.CORSPreflightOriginMiddleware{AcceptedOrigins: util.ToSet(acceptedOrigins)}
-	r.Use(middleware.Middleware)
-
-	n := negroni.Classic()
-	n.UseHandler(r)
-	return n
+	return r
 }

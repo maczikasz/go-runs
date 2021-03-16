@@ -16,7 +16,7 @@ type DataNotFoundError struct {
 func CreateDataNotFoundError(dataType string, id string) error {
 	return DataNotFoundError{
 		dataType: dataType,
-		id: id,
+		id:       id,
 	}
 }
 

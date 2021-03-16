@@ -1,11 +1,9 @@
 package server
 
 import (
-	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/maczikasz/go-runs/internal/model"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
 )
 
 //go:generate moq -out mocks/errors_mock.go -skip-ensure . SessionFromErrorCreator
@@ -19,35 +17,25 @@ type incomingErrorHandler struct {
 	errorHandler SessionFromErrorCreator
 }
 
-func (i incomingErrorHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (i incomingErrorHandler) Serve(context *gin.Context) {
 
-	if request.Method == http.MethodOptions {
-		return
-	}
-
-	bytes, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		log.Trace("Failed to read body of http request")
-		http.Error(writer, "failed to read body", 500)
-	}
 	e := model.Error{}
-	err = json.Unmarshal(bytes, &e)
+	err := context.BindJSON(&e)
 	if err != nil {
 		log.Tracef("Failed to parse json %s \n reason", err.Error())
-		http.Error(writer, "failed to parse json", 500)
+		context.Status(400)
+		_ = context.Error(err)
+		return
 	}
 	sessionId, err := i.errorHandler.GetSessionForError(e)
 
 	if err != nil {
-		log.Tracef("Failed to parse json %s \n reason", err.Error())
 		//TOOD 404? 400?
-		http.Error(writer, "failed to find proper runbook", 500)
+		context.Status(400)
+		_ = context.Error(err)
+		return
 	}
 
-	_, err = writer.Write([]byte(sessionId))
-
-	if err != nil {
-		log.Warn("failed to write json to output")
-	}
+	context.String(200, sessionId)
 
 }

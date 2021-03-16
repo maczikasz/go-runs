@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -42,14 +43,16 @@ func WriteJsonResponse(r http.ResponseWriter, value interface{}) error {
 //		return
 //	}
 // // use the data
-func HandleDataError(writer http.ResponseWriter, request *http.Request, err error) error {
+func HandleDataError(context *gin.Context, err error) error {
 	if err != nil {
 		if dnfError, ok := err.(*model.DataNotFoundError); ok {
 			log.Debug(dnfError)
-			http.NotFound(writer, request)
+			context.Status(404)
+			_ = context.Error(err)
 		} else {
 			log.Errorf("failed to find data: %s", err)
-			http.Error(writer, err.Error(), 500)
+			context.Status(500)
+			_ = context.Error(err)
 		}
 		return err
 	}

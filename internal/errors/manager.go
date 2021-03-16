@@ -14,24 +14,18 @@ type RunbookFinder interface {
 }
 
 type DefaultErrorManager struct {
-	session  SessionCreator
-	runbooks RunbookFinder
-}
-
-func WithManagers(manager *DefaultErrorManager, sessionManager SessionCreator, runbookManager RunbookFinder) *DefaultErrorManager {
-	manager.session = sessionManager
-	manager.runbooks = runbookManager
-	return manager
+	SessionCreator SessionCreator
+	RunbookFinder  RunbookFinder
 }
 
 func (manager DefaultErrorManager) GetSessionForError(e model.Error) (string, error) {
-	runbook, err := manager.runbooks.FindRunbookForError(e)
+	runbook, err := manager.RunbookFinder.FindRunbookForError(e)
 
 	if err != nil {
 		return "", errors.Wrap(err, "failed to find runbook")
 	}
 
-	sessionId := manager.session.CreateNewSessionForRunbook(runbook)
+	sessionId := manager.SessionCreator.CreateNewSessionForRunbook(runbook)
 
 	return sessionId, nil
 
