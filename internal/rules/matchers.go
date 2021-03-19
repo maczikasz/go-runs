@@ -30,14 +30,14 @@ func (r ContainsMatcher) matches(value string) bool {
 	return strings.Contains(value, r.MatchAgainst)
 }
 
-type ExactMatcher struct {
+type EqualsMatcher struct {
 	MatchAgainst string
 }
 
-func (r ExactMatcher) String() string {
+func (r EqualsMatcher) String() string {
 	return fmt.Sprintf("string is equal to %s", r.MatchAgainst)
 }
 
-func (r ExactMatcher) matches(value string) bool {
+func (r EqualsMatcher) matches(value string) bool {
 	return strings.EqualFold(value, r.MatchAgainst)
 }

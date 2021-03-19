@@ -3,9 +3,9 @@ package model
 import "fmt"
 
 type Error struct {
-	Name    string
-	Message string
-	Tags    []string
+	Name    string   `json:"name"`
+	Message string   `json:"message"`
+	Tags    []string `json:"tags"`
 }
 
 type DataNotFoundError struct {

@@ -17,7 +17,7 @@ type incomingErrorHandler struct {
 	errorHandler SessionFromErrorCreator
 }
 
-func (i incomingErrorHandler) Serve(context *gin.Context) {
+func (i incomingErrorHandler) SubmitError(context *gin.Context) {
 
 	e := model.Error{}
 	err := context.BindJSON(&e)

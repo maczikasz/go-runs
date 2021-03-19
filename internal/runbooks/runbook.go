@@ -7,7 +7,7 @@ import (
 )
 
 type RuleMatcher interface {
-	FindMatch(e model.Error) (string, bool)
+	FindMatchingRunbook(e model.Error) (string, bool)
 }
 
 type FakeRunbookManager struct {
@@ -16,7 +16,7 @@ type FakeRunbookManager struct {
 
 func (r FakeRunbookManager) FindRunbookForError(e model.Error) (model.Runbook, error) {
 
-	rulebookId, found := r.RuleManager.FindMatch(e)
+	rulebookId, found := r.RuleManager.FindMatchingRunbook(e)
 	if !found {
 		log.Debugf("Could not find matching rule for error %s", e)
 		return model.Runbook{}, model.CreateDataNotFoundError("runbook", fmt.Sprintf("error: %s", e))

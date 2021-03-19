@@ -16,7 +16,7 @@ type runbookStepDetailsHandler struct {
 	runbookManager RunbookStepDetailsFinder
 }
 
-func (r runbookStepDetailsHandler) Serve(context *gin.Context) {
+func (r runbookStepDetailsHandler) RetrieveRunbookStepDetails(context *gin.Context) {
 
 	stepId := context.Param("stepId")
 
@@ -38,7 +38,7 @@ type runbookHandler struct {
 	runbookDetailsFinder RunbookDetailsFinder
 }
 
-func (r runbookHandler) Serve(context *gin.Context) {
+func (r runbookHandler) RetrieveRunbook(context *gin.Context) {
 
 	runbookId := context.Param("runbookId")
 

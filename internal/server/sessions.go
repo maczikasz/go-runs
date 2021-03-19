@@ -16,7 +16,7 @@ type sessionHandler struct {
 	sessionStore SessionStore
 }
 
-func (s sessionHandler) Serve(context *gin.Context) {
+func (s sessionHandler) LookupSession(context *gin.Context) {
 
 	sessionId := context.Param("sessionId")
 	session, err := s.sessionStore.GetSession(sessionId)
