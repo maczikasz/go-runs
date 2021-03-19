@@ -30,7 +30,8 @@ func main() {
 	defer disconnectFunction()
 
 	config, err := mongodb2.LoadPriorityRuleConfigFromMongodb(client)
-
+	//config:= initMatchers()
+	//
 	if err != nil {
 		log.Fatalf("Failed to load rule config from mongodb: %s", err)
 		panic(err.Error())

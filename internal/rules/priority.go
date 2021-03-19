@@ -148,7 +148,7 @@ func FromMatcherConfig(c *PriorityMatcherConfig) *PriorityRuleManager {
 
 }
 
-func (r PriorityRuleManager) ReloadFromMatcherConfig(c *PriorityMatcherConfig) {
+func (r *PriorityRuleManager) ReloadFromMatcherConfig(c *PriorityMatcherConfig) {
 	r.ruleLock.Lock()
 	defer r.ruleLock.Unlock()
 

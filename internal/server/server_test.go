@@ -20,6 +20,7 @@ var sessionStore = make(map[string]model.Session)
 func TestStartHttpServer(t *testing.T) {
 
 	testContext := StartupContext{
+
 		RunbookDetailsFinder: &server.RunbookDetailsFinderMock{
 			FindRunbookDetailsByIdFunc: func(id string) (model.RunbookDetails, error) {
 				if id == "test-1" {

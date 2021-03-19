@@ -51,7 +51,7 @@ func (h ruleHandler) AddNewRule(context *gin.Context) {
 		return
 	}
 
-	go h.ruleReloader()
+	h.ruleReloader()
 
 	context.Status(http.StatusCreated)
 }

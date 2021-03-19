@@ -36,7 +36,7 @@ func DoTestMongoDBRulesLoadedCorrectly(t *testing.T, mongoUrl string) error {
 	}
 
 	Convey("Given mongoDB is connected", t, func() {
-		mongoClient, cancel := mongodb.InitializeMongoClient(mongoUrl, "admin")
+		mongoClient, cancel := mongodb.InitializeMongoClient(mongoUrl, "local")
 		defer cancel()
 		writer := PersistentRuleWriter{Mongo: mongoClient}
 		reader := PersistentRuleReader{Mongo: mongoClient}
