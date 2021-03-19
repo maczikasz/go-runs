@@ -8,6 +8,12 @@ func ShouldMatch(actual interface{}, expected ...interface{}) string {
 	}
 
 	v := reflect.ValueOf(actual)
+	if v.Kind() == reflect.Ptr {
+		v = reflect.Indirect(v)
+	}
+	if v.Kind() == reflect.Map {
+		v = reflect.ValueOf(valuesOfMap(v.MapRange()))
+	}
 	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
 		return "This assertion requires a slice or an array"
 	}
@@ -28,5 +34,12 @@ func ShouldMatch(actual interface{}, expected ...interface{}) string {
 	}
 
 	return "The slice did not contain a matching object"
+}
 
+func valuesOfMap(mapRange *reflect.MapIter) (result []interface{}) {
+	for mapRange.Next() {
+		result = append(result, mapRange.Value().Interface())
+	}
+
+	return
 }
