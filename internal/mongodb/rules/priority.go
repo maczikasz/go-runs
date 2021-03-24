@@ -1,4 +1,4 @@
-package mongodb
+package rules
 
 import (
 	"github.com/maczikasz/go-runs/internal/mongodb"

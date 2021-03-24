@@ -1,9 +1,10 @@
-package mongodb
+package rules
 
 import (
 	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/maczikasz/go-runs/internal/mongodb"
 	"github.com/maczikasz/go-runs/internal/rules"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -36,7 +37,6 @@ func (receiver PersistentRuleWriter) WriteRule(ruleType string, matcherType stri
 		MatcherType: matcherType,
 		RuleContent: ruleContent,
 		RunbookId:   runbookId,
-		ID:          primitive.NewObjectID().String(),
 	}
 
 	collection, cancel, ctx := receiver.Mongo.Collection("rules")
@@ -55,7 +55,7 @@ func (receiver PersistentRuleWriter) DeleteRule(ruleId string) error {
 	defer cancel()
 	objectID, err := primitive.ObjectIDFromHex(ruleId)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "invalid ID format for mongodb")
 	}
 
 	_, err = collection.DeleteOne(ctx, bson.D{{"_id", objectID}})

@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/maczikasz/go-runs/internal/errors"
 	"github.com/maczikasz/go-runs/internal/mongodb"
+	rules2 "github.com/maczikasz/go-runs/internal/mongodb/rules"
 	"github.com/maczikasz/go-runs/internal/rules"
-	mongodb2 "github.com/maczikasz/go-runs/internal/rules/mongodb"
 	"github.com/maczikasz/go-runs/internal/runbooks"
 	"github.com/maczikasz/go-runs/internal/server"
 	"github.com/maczikasz/go-runs/internal/sessions"
@@ -29,9 +29,8 @@ func main() {
 	client, disconnectFunction := mongodb.InitializeMongoClient("mongodb://localhost:27017", "runs")
 	defer disconnectFunction()
 
-	config, err := mongodb2.LoadPriorityRuleConfigFromMongodb(client)
-	//config:= initMatchers()
-	//
+	config, err := rules2.LoadPriorityRuleConfigFromMongodb(client)
+
 	if err != nil {
 		log.Fatalf("Failed to load rule config from mongodb: %s", err)
 		panic(err.Error())
@@ -39,7 +38,7 @@ func main() {
 
 	ruleManager := rules.FromMatcherConfig(config)
 	sessionManager := sessions.NewInMemorySessionManager()
-	runbookManager := runbooks.FakeRunbookManager{RuleManager: ruleManager}
+	runbookManager := runbooks.RunbookManager{RuleManager: ruleManager}
 	errorManager := errors.DefaultErrorManager{
 		SessionCreator: sessionManager,
 		RunbookFinder:  runbookManager,
@@ -49,12 +48,12 @@ func main() {
 		SessionStore:             sessionManager,
 		RunbookStepDetailsFinder: runbookManager,
 		SessionFromErrorCreator:  errorManager,
-		RuleSaver:                mongodb2.PersistentRuleWriter{Mongo: client},
-		RuleFinder:               mongodb2.PersistentRuleReader{Mongo: client},
+		RuleSaver:                rules2.PersistentRuleWriter{Mongo: client},
+		RuleFinder:               rules2.PersistentRuleReader{Mongo: client},
 		RuleMatcher:              ruleManager,
 		RuleReloader: func() {
 
-			config, err := mongodb2.LoadPriorityRuleConfigFromMongodb(client)
+			config, err := rules2.LoadPriorityRuleConfigFromMongodb(client)
 
 			if err != nil {
 				log.Fatalf("Failed to load rule config from mongodb: %s", err)

@@ -23,6 +23,8 @@ type StartupContext struct {
 	RuleSaver                RuleSaver
 	RuleFinder               RuleFinder
 	RuleMatcher              runbooks.RuleMatcher
+	RunbookStepDetailsWriter RunbookStepWriter
+	RunbookDetailsWriter     RunbookDetailsWriter
 	RuleReloader             func()
 }
 
@@ -31,7 +33,7 @@ func setupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine 
 
 	config := cors.Config{
 		AllowHeaders: []string{"Content-type", "Origin"},
-		AllowMethods: []string{"POST", "GET"},
+		AllowMethods: []string{"POST", "GET", "DELETE", "PUT"},
 	}
 	if len(acceptedOrigins) == 0 {
 		config.AllowAllOrigins = true
@@ -43,8 +45,15 @@ func setupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine 
 
 	errorHandler := incomingErrorHandler{errorHandler: context.SessionFromErrorCreator}
 	sessionHandler := sessionHandler{sessionStore: context.SessionStore}
-	runbookHandler := runbookHandler{runbookDetailsFinder: context.RunbookDetailsFinder}
-	runbookStepDetailsHandler := runbookStepDetailsHandler{context.RunbookStepDetailsFinder}
+	runbookHandler := runbookHandler{
+		runbookDetailsFinder:     context.RunbookDetailsFinder,
+		runbookDetailsWriter:     context.RunbookDetailsWriter,
+		runbookStepDetailsFinder: context.RunbookStepDetailsFinder,
+	}
+	runbookStepDetailsHandler := runbookStepDetailsHandler{
+		runbookManager: context.RunbookStepDetailsFinder,
+		stepWriter:     context.RunbookStepDetailsWriter,
+	}
 	ruleHandler := ruleHandler{
 		ruleSaver:    context.RuleSaver,
 		ruleFinder:   context.RuleFinder,
@@ -54,11 +63,14 @@ func setupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine 
 	r.POST("/rules", ruleHandler.AddNewRule)
 	r.GET("/rules", ruleHandler.ListAllRules)
 	r.DELETE("/rules/:ruleId", ruleHandler.DisableRule)
+	r.PUT("/rules/:ruleId", ruleHandler.UpdateRule)
 	r.GET("/rules/match", ruleHandler.TestRuleMatch)
 	r.POST("/errors", errorHandler.SubmitError)
 	r.GET("/sessions/:sessionId", sessionHandler.LookupSession)
 	r.GET("/runbooks/:runbookId", runbookHandler.RetrieveRunbook)
 	r.GET("/details/:stepId", runbookStepDetailsHandler.RetrieveRunbookStepDetails)
+	r.POST("/details", runbookStepDetailsHandler.CreateNewStep)
+	r.POST("/runbooks", runbookHandler.CreateNewRunbook)
 
 	return r
 }

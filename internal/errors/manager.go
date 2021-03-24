@@ -6,11 +6,11 @@ import (
 )
 
 type SessionCreator interface {
-	CreateNewSessionForRunbook(runbook model.Runbook) string
+	CreateNewSession(runbook model.RunbookRef, err error) string
 }
 
 type RunbookFinder interface {
-	FindRunbookForError(e model.Error) (model.Runbook, error)
+	FindRunbookForError(e model.Error) (model.RunbookRef, error)
 }
 
 type DefaultErrorManager struct {
@@ -25,7 +25,7 @@ func (manager DefaultErrorManager) GetSessionForError(e model.Error) (string, er
 		return "", errors.Wrap(err, "failed to find runbook")
 	}
 
-	sessionId := manager.SessionCreator.CreateNewSessionForRunbook(runbook)
+	sessionId := manager.SessionCreator.CreateNewSession(runbook, err)
 
 	return sessionId, nil
 

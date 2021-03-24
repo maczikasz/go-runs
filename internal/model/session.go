@@ -5,9 +5,10 @@ import (
 )
 
 type Session struct {
-	Runbook   Runbook           `json:"runbook"`
-	SessionId string            `json:"session_id"`
-	Stats     SessionStatistics `json:"stats"`
+	Runbook         RunbookRef        `json:"runbook"`
+	SessionId       string            `json:"session_id"`
+	Stats           SessionStatistics `json:"stats"`
+	TriggeringError Error             `json:"error"`
 }
 
 type SessionStatistics struct {

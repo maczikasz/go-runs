@@ -174,7 +174,7 @@ func (r *PriorityRuleManager) ReloadFromMatcherConfig(c *PriorityMatcherConfig) 
 
 }
 
-func (r PriorityRuleManager) FindMatchingRunbook(error2 model.Error) (string, bool) {
+func (r *PriorityRuleManager) FindMatchingRunbook(error2 model.Error) (string, bool) {
 	locker := r.ruleLock.RLocker()
 	locker.Lock()
 	defer locker.Unlock()

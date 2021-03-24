@@ -98,3 +98,37 @@ func (h ruleHandler) TestRuleMatch(context *gin.Context) {
 		context.String(200, match)
 	}
 }
+
+//TODO rewrite to use the same objectid
+func (h ruleHandler) UpdateRule(context *gin.Context) {
+	ruleId := context.Param("ruleId")
+
+	var dto RuleCreateDTO
+	err := context.BindJSON(&dto)
+
+	if err != nil {
+		//TODO fix all number status
+		context.Status(http.StatusBadRequest)
+		_ = context.Error(err)
+		return
+	}
+
+	err = h.ruleSaver.WriteRule(dto.RuleType, dto.MatcherType, dto.RuleContent, dto.RunbookId)
+	if err != nil {
+		context.Status(http.StatusInternalServerError)
+		_ = context.Error(err)
+		return
+	}
+
+	err = h.ruleSaver.DeleteRule(ruleId)
+	if err != nil {
+		context.Status(http.StatusInternalServerError)
+		_ = context.Error(err)
+		return
+	}
+
+	h.ruleReloader()
+
+	context.Status(http.StatusCreated)
+
+}

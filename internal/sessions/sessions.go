@@ -10,7 +10,7 @@ type FakeSessionManager struct {
 	sessions map[string]model.Session
 }
 
-func (s FakeSessionManager) CreateNewSessionForRunbook(r model.Runbook) string {
+func (s FakeSessionManager) CreateNewSession(r model.RunbookRef, err error) string {
 	sessionId := uuid.New().String()
 	newSession := model.Session{
 		Runbook:   r,

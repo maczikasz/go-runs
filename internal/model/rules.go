@@ -5,5 +5,5 @@ type RuleEntity struct {
 	MatcherType string `json:"matcher_type"`
 	RuleContent string `json:"rule_content"`
 	RunbookId   string `json:"runbook_id"`
-	ID          string `bson:"_id"`
+	ID          string `json:"id" bson:"_id,omitempty"`
 }

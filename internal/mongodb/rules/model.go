@@ -1,4 +1,4 @@
-package mongodb
+package rules
 
 const (
 	regex    = "regex"

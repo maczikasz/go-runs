@@ -24,7 +24,7 @@ func TestStartHttpServer(t *testing.T) {
 		RunbookDetailsFinder: &server.RunbookDetailsFinderMock{
 			FindRunbookDetailsByIdFunc: func(id string) (model.RunbookDetails, error) {
 				if id == "test-1" {
-					return model.RunbookDetails{Steps: []model.RunbookStepSummary{
+					return model.RunbookDetails{Steps: []model.RunbookStepData{
 						{
 							Id:      "rbs1",
 							Summary: "Test step 1",
@@ -50,8 +50,10 @@ func TestStartHttpServer(t *testing.T) {
 			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepDetails, error) {
 				if id == "rbs1" {
 					return model.RunbookStepDetails{
-						Summary:  "Test workaround 1",
-						Type:     "Workaround",
+						RunbookStepData: model.RunbookStepData{
+							Summary: "Test workaround 1",
+							Type:    "Workaround",
+						},
 						Markdown: "Test MD 1",
 					}, nil
 				}
@@ -62,9 +64,10 @@ func TestStartHttpServer(t *testing.T) {
 			GetSessionForErrorFunc: func(e model.Error) (string, error) {
 				if e.Name == "Test Error 1" {
 					sessionStore["s1"] = model.Session{
-						Runbook:   model.Runbook{Id: "test-1"},
-						SessionId: "s1",
-						Stats:     model.SessionStatistics{CompletedSteps: map[string]time.Time{}},
+						Runbook:         model.RunbookRef{Id: "test-1"},
+						SessionId:       "s1",
+						Stats:           model.SessionStatistics{CompletedSteps: map[string]time.Time{}},
+						TriggeringError: e,
 					}
 					return "s1", nil
 				}
@@ -131,7 +134,7 @@ func TestStartHttpServer(t *testing.T) {
 
 						So(w.Code, ShouldEqual, 200)
 						So(details.Steps, test_utils.ShouldMatch, func(value interface{}) bool {
-							if step, ok := value.(model.RunbookStepSummary); ok {
+							if step, ok := value.(model.RunbookStepData); ok {
 								return step.Id == "rbs1" && step.Type == "Workaround" && step.Summary == "Test step 1"
 							}
 

@@ -1,4 +1,4 @@
-package mongodb
+package rules
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"github.com/maczikasz/go-runs/internal/mongodb"
 	"github.com/maczikasz/go-runs/internal/rules"
 	"github.com/maczikasz/go-runs/internal/test_utils"
-	"github.com/ory/dockertest/v3"
 	log "github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,7 +17,7 @@ import (
 )
 
 func TestMongoDBRulesLoadedCorrectly(t *testing.T) {
-	RunMongoDBDockerTest(DoTestMongoDBRulesLoadedCorrectly, t)
+	test_utils.RunMongoDBDockerTest(DoTestMongoDBRulesLoadedCorrectly, t)
 }
 
 func DoTestMongoDBRulesLoadedCorrectly(t *testing.T, mongoUrl string) error {
@@ -153,27 +152,5 @@ func DoTestMongoDBInDockerWorks(t *testing.T, mongoUrl string) error {
 }
 
 func TestMongoDBInDockerWorks(t *testing.T) {
-	RunMongoDBDockerTest(DoTestMongoDBInDockerWorks, t)
-}
-
-func RunMongoDBDockerTest(testFunction func(t *testing.T, mongoUrl string) error, t *testing.T) {
-	// uses a sensible default on windows (tcp/http) and linux/osx (socket)
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		log.Fatalf("Could not connect to docker: %s", err)
-	}
-
-	// pulls an image, creates a container based on it and runs it
-	resource, err := pool.Run("mongo", "latest", []string{})
-	if err != nil {
-		log.Fatalf("Could not start resource: %s", err)
-	}
-	_ = resource.Expire(60)
-
-	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
-	if err := pool.Retry(func() error {
-		return testFunction(t, fmt.Sprintf("mongodb://localhost:%s", resource.GetPort("27017/tcp")))
-	}); err != nil {
-		log.Fatalf("Could not connect to docker: %s", err)
-	}
+	test_utils.RunMongoDBDockerTest(DoTestMongoDBInDockerWorks, t)
 }

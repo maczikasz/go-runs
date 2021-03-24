@@ -15,7 +15,7 @@ import (
 // 		// make and configure a mocked RunbookStepDetailsFinder
 // 		mockedRunbookStepDetailsFinder := &RunbookStepDetailsFinderMock{
 // 			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepDetails, error) {
-// 				panic("mock out the FindRunbookStepDetailsById method")
+// 				panic("mock out the FindRunbookStepEntityById method")
 // 			},
 // 		}
 //
@@ -24,12 +24,12 @@ import (
 //
 // 	}
 type RunbookStepDetailsFinderMock struct {
-	// FindRunbookStepDetailsByIdFunc mocks the FindRunbookStepDetailsById method.
+	// FindRunbookStepDetailsByIdFunc mocks the FindRunbookStepEntityById method.
 	FindRunbookStepDetailsByIdFunc func(id string) (model.RunbookStepDetails, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// FindRunbookStepDetailsById holds details about calls to the FindRunbookStepDetailsById method.
+		// FindRunbookStepEntityById holds details about calls to the FindRunbookStepEntityById method.
 		FindRunbookStepDetailsById []struct {
 			// ID is the id argument value.
 			ID string
@@ -38,10 +38,10 @@ type RunbookStepDetailsFinderMock struct {
 	lockFindRunbookStepDetailsById sync.RWMutex
 }
 
-// FindRunbookStepDetailsById calls FindRunbookStepDetailsByIdFunc.
+// FindRunbookStepEntityById calls FindRunbookStepDetailsByIdFunc.
 func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsById(id string) (model.RunbookStepDetails, error) {
 	if mock.FindRunbookStepDetailsByIdFunc == nil {
-		panic("RunbookStepDetailsFinderMock.FindRunbookStepDetailsByIdFunc: method is nil but RunbookStepDetailsFinder.FindRunbookStepDetailsById was just called")
+		panic("RunbookStepDetailsFinderMock.FindRunbookStepDetailsByIdFunc: method is nil but RunbookStepDetailsFinder.FindRunbookStepEntityById was just called")
 	}
 	callInfo := struct {
 		ID string
@@ -54,7 +54,7 @@ func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsById(id string) 
 	return mock.FindRunbookStepDetailsByIdFunc(id)
 }
 
-// FindRunbookStepDetailsByIdCalls gets all the calls that were made to FindRunbookStepDetailsById.
+// FindRunbookStepDetailsByIdCalls gets all the calls that were made to FindRunbookStepEntityById.
 // Check the length with:
 //     len(mockedRunbookStepDetailsFinder.FindRunbookStepDetailsByIdCalls())
 func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsByIdCalls() []struct {
