@@ -4,31 +4,32 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/maczikasz/go-runs/internal/runbooks"
+	"github.com/maczikasz/go-runs/internal/server/handlers"
 	"sync"
 )
 
 func StartHttpServer(wg *sync.WaitGroup, context *StartupContext) {
 	defer wg.Done()
-	r := setupRouter(context, []string{"http://localhost:3000"})
+	r := SetupRouter(context, []string{"http://localhost:3000"})
 
 	//TODO error handle
 	_ = r.Run()
 }
 
 type StartupContext struct {
-	RunbookDetailsFinder     RunbookDetailsFinder
-	SessionStore             SessionStore
-	RunbookStepDetailsFinder RunbookStepDetailsFinder
-	SessionFromErrorCreator  SessionFromErrorCreator
-	RuleSaver                RuleSaver
-	RuleFinder               RuleFinder
+	RunbookDetailsFinder     handlers.RunbookDetailsFinder
+	SessionStore             handlers.SessionStore
+	RunbookStepDetailsFinder handlers.RunbookStepDetailsFinder
+	ErrorManager             handlers.ErrorManager
+	RuleSaver                handlers.RuleSaver
+	RuleFinder               handlers.RuleFinder
 	RuleMatcher              runbooks.RuleMatcher
-	RunbookStepDetailsWriter RunbookStepWriter
-	RunbookDetailsWriter     RunbookDetailsWriter
+	RunbookStepDetailsWriter handlers.RunbookStepWriter
+	RunbookDetailsWriter     handlers.RunbookDetailsWriter
 	RuleReloader             func()
 }
 
-func setupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine {
+func SetupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine {
 	r := gin.Default()
 
 	config := cors.Config{
@@ -43,23 +44,12 @@ func setupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine 
 
 	r.Use(cors.New(config))
 
-	errorHandler := incomingErrorHandler{errorHandler: context.SessionFromErrorCreator}
-	sessionHandler := sessionHandler{sessionStore: context.SessionStore}
-	runbookHandler := runbookHandler{
-		runbookDetailsFinder:     context.RunbookDetailsFinder,
-		runbookDetailsWriter:     context.RunbookDetailsWriter,
-		runbookStepDetailsFinder: context.RunbookStepDetailsFinder,
-	}
-	runbookStepDetailsHandler := runbookStepDetailsHandler{
-		runbookManager: context.RunbookStepDetailsFinder,
-		stepWriter:     context.RunbookStepDetailsWriter,
-	}
-	ruleHandler := ruleHandler{
-		ruleSaver:    context.RuleSaver,
-		ruleFinder:   context.RuleFinder,
-		ruleMatcher:  context.RuleMatcher,
-		ruleReloader: context.RuleReloader,
-	}
+	errorHandler := handlers.NewIncomingErrorHandler(context.ErrorManager)
+	sessionHandler := handlers.NewSessionHandler(context.SessionStore)
+	runbookHandler := handlers.NewRunbookHandler(context.RunbookDetailsFinder, context.RunbookDetailsWriter, context.RunbookStepDetailsFinder)
+	runbookStepDetailsHandler := handlers.NewRunbookStepDetailsHandler(context.RunbookStepDetailsFinder, context.RunbookStepDetailsWriter)
+	ruleHandler := handlers.NewRuleHandler(context.RuleSaver, context.RuleFinder, context.RuleMatcher, context.RuleReloader)
+
 	r.POST("/rules", ruleHandler.AddNewRule)
 	r.GET("/rules", ruleHandler.ListAllRules)
 	r.DELETE("/rules/:ruleId", ruleHandler.DisableRule)

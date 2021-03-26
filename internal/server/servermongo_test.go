@@ -12,6 +12,7 @@ import (
 	runbooks2 "github.com/maczikasz/go-runs/internal/mongodb/runbooks"
 	"github.com/maczikasz/go-runs/internal/rules"
 	"github.com/maczikasz/go-runs/internal/runbooks"
+	"github.com/maczikasz/go-runs/internal/server/dto"
 	"github.com/maczikasz/go-runs/internal/sessions"
 	"github.com/maczikasz/go-runs/internal/test_utils"
 	log "github.com/sirupsen/logrus"
@@ -32,18 +33,18 @@ func DoTestHttpRunbookManagementWithMongo(t *testing.T, client *mongodb.MongoCli
 	var step1Id string
 	var step2Id string
 
-	step1 := stepDTO{
+	step1 := dto.StepDTO{
 		Summary: "Test summary",
-		Markdown: MarkdownInfo{
+		Markdown: dto.MarkdownInfo{
 			Content: "TEST_MARKDOWN",
 			Type:    "gridfs",
 		},
 		Type: "Workaround",
 	}
 
-	step2 := stepDTO{
+	step2 := dto.StepDTO{
 		Summary: "Test summary1",
-		Markdown: MarkdownInfo{
+		Markdown: dto.MarkdownInfo{
 			Content: "TEST_MARKDOWN1",
 			Type:    "gridfs",
 		},
@@ -116,7 +117,7 @@ func DoTestHttpRunbookManagementWithMongo(t *testing.T, client *mongodb.MongoCli
 	})
 
 	Convey("When new runbook is created with the steps", t, func() {
-		bytes, _ := json2.Marshal(runbookDTO{Steps: []string{step1Id, step2Id}})
+		bytes, _ := json2.Marshal(dto.RunbookDTO{Steps: []string{step1Id, step2Id}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/runbooks", bytes2.NewReader(bytes))
 		w := httptest.NewRecorder()
@@ -180,18 +181,18 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 	var runbookId2 string
 	var lastSession model.Session
 
-	step1 := stepDTO{
+	step1 := dto.StepDTO{
 		Summary: "Test summary",
-		Markdown: MarkdownInfo{
+		Markdown: dto.MarkdownInfo{
 			Content: "TEST_MARKDOWN",
 			Type:    "gridfs",
 		},
 		Type: "Workaround",
 	}
 
-	step2 := stepDTO{
+	step2 := dto.StepDTO{
 		Summary: "Test summary1",
-		Markdown: MarkdownInfo{
+		Markdown: dto.MarkdownInfo{
 			Content: "TEST_MARKDOWN1",
 			Type:    "gridfs",
 		},
@@ -220,7 +221,7 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 
 		step2Id = w.Body.String()
 
-		bytes, _ = json2.Marshal(runbookDTO{Steps: []string{step1Id}})
+		bytes, _ = json2.Marshal(dto.RunbookDTO{Steps: []string{step1Id}})
 
 		r, _ = http.NewRequest(http.MethodPost, "/runbooks", bytes2.NewReader(bytes))
 		w = httptest.NewRecorder()
@@ -230,7 +231,7 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 
 		runbookId = w.Body.String()
 
-		bytes, _ = json2.Marshal(runbookDTO{Steps: []string{step2Id}})
+		bytes, _ = json2.Marshal(dto.RunbookDTO{Steps: []string{step2Id}})
 
 		r, _ = http.NewRequest(http.MethodPost, "/runbooks", bytes2.NewReader(bytes))
 		w = httptest.NewRecorder()
@@ -243,7 +244,7 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 	})
 
 	Convey("Given matching message rule is saved", t, func() {
-		rule := RuleCreateDTO{
+		rule := dto.RuleCreateDTO{
 			RuleType:    "message",
 			MatcherType: "equal",
 			RuleContent: "Test message",
@@ -371,7 +372,7 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 
 	Convey("When matching name rule is saved", t, func() {
 
-		rule := RuleCreateDTO{
+		rule := dto.RuleCreateDTO{
 			RuleType:    "name",
 			MatcherType: "contains",
 			RuleContent: "name",
@@ -588,7 +589,7 @@ func initializeRouter(client *mongodb.MongoClient) (*gin.Engine, error) {
 		RunbookDetailsFinder:     runbookDataManager,
 		SessionStore:             sessionManager,
 		RunbookStepDetailsFinder: runbookStepDetailsFinder,
-		SessionFromErrorCreator:  errorManager,
+		ErrorManager:             errorManager,
 		RuleSaver:                rules2.PersistentRuleWriter{Mongo: client},
 		RuleFinder:               rules2.PersistentRuleReader{Mongo: client},
 		RuleMatcher:              ruleManager,
@@ -607,6 +608,6 @@ func initializeRouter(client *mongodb.MongoClient) (*gin.Engine, error) {
 		},
 	}
 
-	router := setupRouter(&startupContext, []string{})
+	router := SetupRouter(&startupContext, []string{})
 	return router, nil
 }

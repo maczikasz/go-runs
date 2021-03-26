@@ -4,7 +4,7 @@ import (
 	bytes2 "bytes"
 	"encoding/json"
 	"github.com/maczikasz/go-runs/internal/model"
-	server "github.com/maczikasz/go-runs/internal/server/mocks"
+	mocks "github.com/maczikasz/go-runs/internal/server/mocks"
 	"github.com/maczikasz/go-runs/internal/test_utils"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
@@ -21,7 +21,7 @@ func TestStartHttpServer(t *testing.T) {
 
 	testContext := StartupContext{
 
-		RunbookDetailsFinder: &server.RunbookDetailsFinderMock{
+		RunbookDetailsFinder: &mocks.RunbookDetailsFinderMock{
 			FindRunbookDetailsByIdFunc: func(id string) (model.RunbookDetails, error) {
 				if id == "test-1" {
 					return model.RunbookDetails{Steps: []model.RunbookStepData{
@@ -35,7 +35,7 @@ func TestStartHttpServer(t *testing.T) {
 				return model.RunbookDetails{}, model.CreateDataNotFoundError("runbook_details", id)
 			},
 		},
-		SessionStore: &server.SessionStoreMock{
+		SessionStore: &mocks.SessionStoreMock{
 			GetSessionFunc: func(s string) (model.Session, error) {
 				session, found := sessionStore[s]
 
@@ -46,7 +46,7 @@ func TestStartHttpServer(t *testing.T) {
 				return session, nil
 			},
 		},
-		RunbookStepDetailsFinder: &server.RunbookStepDetailsFinderMock{
+		RunbookStepDetailsFinder: &mocks.RunbookStepDetailsFinderMock{
 			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepDetails, error) {
 				if id == "rbs1" {
 					return model.RunbookStepDetails{
@@ -60,8 +60,8 @@ func TestStartHttpServer(t *testing.T) {
 				return model.RunbookStepDetails{}, model.CreateDataNotFoundError("step_details", id)
 			},
 		},
-		SessionFromErrorCreator: &server.SessionFromErrorCreatorMock{
-			GetSessionForErrorFunc: func(e model.Error) (string, error) {
+		ErrorManager: &mocks.ErrorManagerMock{
+			ManageErrorWitSessionFunc: func(e model.Error) (string, error) {
 				if e.Name == "Test Error 1" {
 					sessionStore["s1"] = model.Session{
 						Runbook:         model.RunbookRef{Id: "test-1"},
@@ -78,7 +78,7 @@ func TestStartHttpServer(t *testing.T) {
 	}
 
 	Convey("Given http router is setup with fake context", t, func() {
-		router := setupRouter(&testContext, []string{})
+		router := SetupRouter(&testContext, []string{})
 		var sessionId = ""
 		Convey("When exact name matching error sent in", func() {
 			err := model.Error{

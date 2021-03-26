@@ -18,7 +18,7 @@ type DefaultErrorManager struct {
 	RunbookFinder  RunbookFinder
 }
 
-func (manager DefaultErrorManager) GetSessionForError(e model.Error) (string, error) {
+func (manager DefaultErrorManager) ManageErrorWitSession(e model.Error) (string, error) {
 	runbook, err := manager.RunbookFinder.FindRunbookForError(e)
 
 	if err != nil {

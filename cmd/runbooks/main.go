@@ -66,7 +66,7 @@ func main() {
 		RunbookDetailsFinder:     runbookDataManager,
 		SessionStore:             sessionManager,
 		RunbookStepDetailsFinder: runbookStepDetailsFinder,
-		SessionFromErrorCreator:  errorManager,
+		ErrorManager:             errorManager,
 		RuleSaver:                rules2.PersistentRuleWriter{Mongo: client},
 		RuleFinder:               rules2.PersistentRuleReader{Mongo: client},
 		RuleMatcher:              ruleManager,
