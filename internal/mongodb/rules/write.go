@@ -58,7 +58,7 @@ func (receiver PersistentRuleWriter) DeleteRule(ruleId string) error {
 		return errors.Wrap(err, "invalid ID format for mongodb")
 	}
 
-	_, err = collection.DeleteOne(ctx, bson.D{{"_id", objectID}})
+	_, err = collection.DeleteOne(ctx, bson.D{{Key: "_id", Value: objectID}})
 
 	if err != nil {
 		return err

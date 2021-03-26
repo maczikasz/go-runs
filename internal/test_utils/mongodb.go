@@ -6,6 +6,7 @@ import (
 	"github.com/maczikasz/go-runs/internal/mongodb"
 	"github.com/ory/dockertest/v3"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -41,6 +42,7 @@ func RunMongoDBDockerTest(testFunction func(t *testing.T, client *mongodb.MongoC
 		err = client.Ping(ctx, readpref.Primary())
 
 		if err != nil {
+			log.Error("Failed to connect to mongo")
 			return err
 		}
 

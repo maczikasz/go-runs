@@ -3,7 +3,9 @@ package main
 import (
 	"github.com/maczikasz/go-runs/internal/errors"
 	"github.com/maczikasz/go-runs/internal/mongodb"
+	"github.com/maczikasz/go-runs/internal/mongodb/gridfs"
 	rules2 "github.com/maczikasz/go-runs/internal/mongodb/rules"
+	runbooks2 "github.com/maczikasz/go-runs/internal/mongodb/runbooks"
 	"github.com/maczikasz/go-runs/internal/rules"
 	"github.com/maczikasz/go-runs/internal/runbooks"
 	"github.com/maczikasz/go-runs/internal/server"
@@ -11,15 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sync"
 )
-
-func initMatchers() *rules.PriorityMatcherConfig {
-	config := rules.NewMatcherConfig()
-	config = config.AddNameEqualsMatchers(&map[string]rules.EqualsMatcher{"test-1": {MatchAgainst: "Test Error 1"}})
-	config = config.AddNameContainsMatchers(&map[string]rules.ContainsMatcher{"test-1-2": {MatchAgainst: "Test Error"}})
-	config = config.AddMessageContainsMatchers(&map[string]rules.ContainsMatcher{"test-2": {MatchAgainst: "message"}})
-	config = config.AddTagEqualsMatchers(&map[string]rules.EqualsMatcher{"test-3": {MatchAgainst: "match"}})
-	return config
-}
 
 func main() {
 	log.SetLevel(log.TraceLevel)
@@ -30,27 +23,55 @@ func main() {
 	defer disconnectFunction()
 
 	config, err := rules2.LoadPriorityRuleConfigFromMongodb(client)
+	//config:= initMatchers()
+	//
+	if err != nil {
+		log.Fatalf("Failed to load rule config from mongodb: %s", err)
+		panic(err.Error())
+	}
+
+	runbookDataManager := runbooks2.RunbookDataManager{Client: client}
+	runbookStepsDataManager := runbooks2.RunbookStepsDataManager{Client: client}
+	fsClient, err := client.NewGridFSClient()
 
 	if err != nil {
 		log.Fatalf("Failed to load rule config from mongodb: %s", err)
 		panic(err.Error())
 	}
 
+	resolver := runbooks.MapRunbookMarkdownResolver{
+		Resolvers: map[string]runbooks.MarkdownHandlers{"gridfs": {
+			Resolver: gridfs.MarkdownResolver{Client: &gridfs.Client{Bucket: fsClient}},
+			Writer:   gridfs.MarkdownWriter{Client: &gridfs.Client{Bucket: fsClient}}},
+		},
+	}
+
+	runbookStepDetailsFinder := runbooks.RunbookStepDetailsFinder{
+		RunbookStepsEntityFinder:    runbookStepsDataManager,
+		RunbookStepMarkdownResolver: resolver,
+	}
+
+	stepDetailsWriter := runbooks.RunbookStepDetailsWriter{
+		RunbookStepsEntityWriter:  runbookStepsDataManager,
+		RunbookStepMarkdownWriter: resolver,
+	}
 	ruleManager := rules.FromMatcherConfig(config)
 	sessionManager := sessions.NewInMemorySessionManager()
-	runbookManager := runbooks.RunbookManager{RuleManager: ruleManager}
+	runbookManager := runbooks.RunbookManager{RuleManager: ruleManager, RunbookFinder: runbookDataManager}
 	errorManager := errors.DefaultErrorManager{
 		SessionCreator: sessionManager,
 		RunbookFinder:  runbookManager,
 	}
 	startupContext := server.StartupContext{
-		RunbookDetailsFinder:     runbookManager,
+		RunbookDetailsFinder:     runbookDataManager,
 		SessionStore:             sessionManager,
-		RunbookStepDetailsFinder: runbookManager,
+		RunbookStepDetailsFinder: runbookStepDetailsFinder,
 		SessionFromErrorCreator:  errorManager,
 		RuleSaver:                rules2.PersistentRuleWriter{Mongo: client},
 		RuleFinder:               rules2.PersistentRuleReader{Mongo: client},
 		RuleMatcher:              ruleManager,
+		RunbookStepDetailsWriter: stepDetailsWriter,
+		RunbookDetailsWriter:     runbookDataManager,
 		RuleReloader: func() {
 
 			config, err := rules2.LoadPriorityRuleConfigFromMongodb(client)
@@ -63,7 +84,6 @@ func main() {
 			ruleManager.ReloadFromMatcherConfig(config)
 		},
 	}
-
 	server.StartHttpServer(&wg, &startupContext)
 	wg.Wait()
 }

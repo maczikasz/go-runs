@@ -16,7 +16,7 @@ func (p PersistentRuleReader) FindOneRule(ruleType string, matcherType string, r
 	defer cancel()
 
 	var result model.RuleEntity
-	err := collection.FindOne(ctx, bson.D{{"ruletype", ruleType}, {"matchertype", matcherType}}).Decode(result)
+	err := collection.FindOne(ctx, bson.D{{Key: "ruletype", Value: ruleType}, {Key: "matchertype", Value: matcherType}}).Decode(result)
 
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (p PersistentRuleReader) FindRule(ruleType string, matcherType string) (*[]
 	collection, cancel, ctx := p.Mongo.Collection("rules")
 	defer cancel()
 
-	cursor, err := collection.Find(ctx, bson.D{{"ruletype", ruleType}, {"matchertype", matcherType}})
+	cursor, err := collection.Find(ctx, bson.D{{Key: "ruletype", Value: ruleType}, {Key: "matchertype", Value: matcherType}})
 	if err != nil {
 		return nil, err
 	}

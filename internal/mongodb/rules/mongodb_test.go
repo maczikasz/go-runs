@@ -1,59 +1,40 @@
 package rules
 
 import (
-	"context"
 	"fmt"
 	"github.com/maczikasz/go-runs/internal/mongodb"
 	"github.com/maczikasz/go-runs/internal/rules"
 	"github.com/maczikasz/go-runs/internal/test_utils"
-	log "github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"regexp"
 	"testing"
-	"time"
 )
 
 func TestMongoDBRulesLoadedCorrectly(t *testing.T) {
 	test_utils.RunMongoDBDockerTest(DoTestMongoDBRulesLoadedCorrectly, t)
 }
 
-func DoTestMongoDBRulesLoadedCorrectly(t *testing.T, mongoUrl string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoUrl))
-	if err != nil {
-		return err
-	}
-	err = client.Ping(ctx, readpref.Primary())
-
-	if err != nil {
-		return err
-	}
+func DoTestMongoDBRulesLoadedCorrectly(t *testing.T, mongoClient *mongodb.MongoClient) error {
 
 	Convey("Given mongoDB is connected", t, func() {
-		mongoClient, cancel := mongodb.InitializeMongoClient(mongoUrl, "local")
-		defer cancel()
+
 		writer := PersistentRuleWriter{Mongo: mongoClient}
 		reader := PersistentRuleReader{Mongo: mongoClient}
 
 		ruleTypes := []string{"name", "message", "tag"}
 		for _, ruleType := range ruleTypes {
-			testAndWriteExactRules(err, writer, ruleType, "test", reader)
-			testAndWriteContainsRules(err, writer, ruleType, "test", reader)
-			testAndWriteRegexRules(err, writer, ruleType, "test", reader)
+			testAndWriteExactRules(writer, ruleType, "test", reader)
+			testAndWriteContainsRules(writer, ruleType, "test", reader)
+			testAndWriteRegexRules(writer, ruleType, "test", reader)
 		}
 
 	})
 	return nil
 }
 
-func testAndWriteExactRules(err error, writer PersistentRuleWriter, ruleType string, content string, reader PersistentRuleReader) {
+func testAndWriteExactRules(writer PersistentRuleWriter, ruleType string, content string, reader PersistentRuleReader) {
 	Convey(fmt.Sprintf("When %s %s matcher is written", equal, ruleType), func() {
-		err = writer.WriteRule(ruleType, equal, content, "1")
+		err := writer.WriteRule(ruleType, equal, content, "1")
 
 		So(err, ShouldBeNil)
 
@@ -75,9 +56,9 @@ func testAndWriteExactRules(err error, writer PersistentRuleWriter, ruleType str
 	})
 }
 
-func testAndWriteRegexRules(err error, writer PersistentRuleWriter, ruleType string, content string, reader PersistentRuleReader) {
+func testAndWriteRegexRules(writer PersistentRuleWriter, ruleType string, content string, reader PersistentRuleReader) {
 	Convey(fmt.Sprintf("When %s %s matcher is written", regex, ruleType), func() {
-		err = writer.WriteRule(ruleType, regex, content, "1")
+		err := writer.WriteRule(ruleType, regex, content, "1")
 
 		So(err, ShouldBeNil)
 
@@ -99,9 +80,9 @@ func testAndWriteRegexRules(err error, writer PersistentRuleWriter, ruleType str
 	})
 }
 
-func testAndWriteContainsRules(err error, writer PersistentRuleWriter, ruleType string, content string, reader PersistentRuleReader) {
+func testAndWriteContainsRules(writer PersistentRuleWriter, ruleType string, content string, reader PersistentRuleReader) {
 	Convey(fmt.Sprintf("When %s %s matcher is written", contains, ruleType), func() {
-		err = writer.WriteRule(ruleType, contains, content, "1")
+		err := writer.WriteRule(ruleType, contains, content, "1")
 
 		So(err, ShouldBeNil)
 
@@ -121,36 +102,4 @@ func testAndWriteContainsRules(err error, writer PersistentRuleWriter, ruleType 
 			})
 		})
 	})
-}
-
-func DoTestMongoDBInDockerWorks(t *testing.T, mongoUrl string) error {
-	var dockerLevelError error
-	Convey("Given mongoDB is running inside a docker", t, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		Convey("When mongoDB connection is established", func() {
-			client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoUrl))
-
-			if err != nil {
-				log.Errorf("Failed to connect to mongodb %s", err.Error())
-				dockerLevelError = err
-			}
-
-			Convey("Then mongoDB ping succeeds", func() {
-				err = client.Ping(ctx, readpref.Primary())
-				if err != nil {
-					log.Errorf("Failed to ping mongodb %s", err.Error())
-
-					dockerLevelError = err
-				}
-			})
-		})
-
-	})
-	return dockerLevelError
-}
-
-func TestMongoDBInDockerWorks(t *testing.T) {
-	test_utils.RunMongoDBDockerTest(DoTestMongoDBInDockerWorks, t)
 }
