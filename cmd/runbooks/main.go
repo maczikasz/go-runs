@@ -39,12 +39,12 @@ func main() {
 		panic(err.Error())
 	}
 
-	resolver := runbooks.MapRunbookMarkdownResolver{
-		Resolvers: map[string]runbooks.MarkdownHandlers{"gridfs": {
+	resolver := runbooks.BuildNewMapRunbookMarkdownResolver(runbooks.Builder{
+		{"gridfs", runbooks.MarkdownHandlers{
 			Resolver: gridfs.MarkdownResolver{Client: &gridfs.Client{Bucket: fsClient}},
 			Writer:   gridfs.MarkdownWriter{Client: &gridfs.Client{Bucket: fsClient}}},
 		},
-	}
+	})
 
 	runbookStepDetailsFinder := runbooks.RunbookStepDetailsFinder{
 		RunbookStepsEntityFinder:    runbookStepsDataManager,
@@ -57,11 +57,8 @@ func main() {
 	}
 	ruleManager := rules.FromMatcherConfig(config)
 	sessionManager := sessions.NewInMemorySessionManager()
-	runbookManager := runbooks.RunbookManager{RuleManager: ruleManager, RunbookFinder: runbookDataManager}
-	errorManager := errors.DefaultErrorManager{
-		SessionCreator: sessionManager,
-		RunbookFinder:  runbookManager,
-	}
+	runbookManager := runbooks.NewRunbookManager(ruleManager, runbookDataManager)
+	errorManager := errors.NewDefaultErrorManager(sessionManager, runbookManager)
 	startupContext := server.StartupContext{
 		RunbookDetailsFinder:     runbookDataManager,
 		SessionStore:             sessionManager,

@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-type FakeSessionManager struct {
+type InMemorySessionManager struct {
 	sessions map[string]model.Session
 }
 
-func (s FakeSessionManager) CreateNewSession(r model.RunbookRef, err error) string {
+func (s InMemorySessionManager) CreateNewSession(r model.RunbookRef, err error) string {
 	sessionId := uuid.New().String()
 	newSession := model.Session{
 		Runbook:   r,
@@ -25,11 +25,11 @@ func (s FakeSessionManager) CreateNewSession(r model.RunbookRef, err error) stri
 	return sessionId
 }
 
-func NewInMemorySessionManager() *FakeSessionManager {
-	return &FakeSessionManager{sessions: map[string]model.Session{}}
+func NewInMemorySessionManager() *InMemorySessionManager {
+	return &InMemorySessionManager{sessions: map[string]model.Session{}}
 }
 
-func (s FakeSessionManager) GetSession(sessionId string) (model.Session, error) {
+func (s InMemorySessionManager) GetSession(sessionId string) (model.Session, error) {
 	res, ok := s.sessions[sessionId]
 
 	if !ok {

@@ -3,7 +3,6 @@ package gridfs
 import (
 	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/maczikasz/go-runs/internal/mongodb"
-	"github.com/maczikasz/go-runs/internal/runbooks"
 	"github.com/maczikasz/go-runs/internal/test_utils"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,7 +20,7 @@ func DoTestMarkdownIsWrittenThenResolved(t *testing.T, client *mongodb.MongoClie
 		const testContent = "TEST_CONTENT"
 
 		Convey("Given data is written to GridFS", func() {
-			fileId, wErr := writer.WriteMarkdown(&runbooks.Markdown{Content: testContent})
+			fileId, wErr := writer.WriteMarkdown(&model.Markdown{Content: testContent})
 
 			So(wErr, ShouldBeNil)
 

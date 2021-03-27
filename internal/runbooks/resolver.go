@@ -1,26 +1,51 @@
 package runbooks
 
-import "github.com/maczikasz/go-runs/internal/model"
+import (
+	"github.com/maczikasz/go-runs/internal/model"
+)
 
-type MarkdownResolver interface {
-	ResolveMarkdownFromLocationString(string) (*Markdown, error)
+type (
+	E struct {
+		Key   string
+		Value MarkdownHandlers
+	}
+
+	MarkdownResolver interface {
+		ResolveMarkdownFromLocationString(string) (*model.Markdown, error)
+	}
+
+	MarkdownWriter interface {
+		WriteMarkdown(markdown *model.Markdown) (string, error)
+	}
+
+	MarkdownHandlers struct {
+		Resolver MarkdownResolver
+		Writer   MarkdownWriter
+	}
+
+	MapRunbookMarkdownResolver struct {
+		resolvers map[string]MarkdownHandlers
+	}
+)
+
+type Builder []E
+
+func BuildNewMapRunbookMarkdownResolver(resolverList Builder) *MapRunbookMarkdownResolver {
+	resolvers := make(map[string]MarkdownHandlers)
+
+	for _, resolver := range resolverList {
+		resolvers[resolver.Key] = resolver.Value
+	}
+
+	return NewMapRunbookMarkdownResolver(resolvers)
 }
 
-type MarkdownWriter interface {
-	WriteMarkdown(markdown *Markdown) (string, error)
+func NewMapRunbookMarkdownResolver(resolvers map[string]MarkdownHandlers) *MapRunbookMarkdownResolver {
+	return &MapRunbookMarkdownResolver{resolvers: resolvers}
 }
 
-type MarkdownHandlers struct {
-	Resolver MarkdownResolver
-	Writer   MarkdownWriter
-}
-
-type MapRunbookMarkdownResolver struct {
-	Resolvers map[string]MarkdownHandlers
-}
-
-func (m MapRunbookMarkdownResolver) ResolveRunbookStepMarkdown(location RunbookStepLocation) (*Markdown, error) {
-	resolver, ok := m.Resolvers[location.LocationType]
+func (m MapRunbookMarkdownResolver) ResolveRunbookStepMarkdown(location model.RunbookStepLocation) (*model.Markdown, error) {
+	resolver, ok := m.resolvers[location.LocationType]
 
 	if !ok {
 		return nil, model.CreateDataNotFoundError("resolver_type", location.LocationType)
@@ -29,8 +54,8 @@ func (m MapRunbookMarkdownResolver) ResolveRunbookStepMarkdown(location RunbookS
 	return resolver.Resolver.ResolveMarkdownFromLocationString(location.Ref)
 }
 
-func (m MapRunbookMarkdownResolver) WriteRunbookStepMarkdown(markdown *Markdown, storageType string) (string, error) {
-	resolver, ok := m.Resolvers[storageType]
+func (m MapRunbookMarkdownResolver) WriteRunbookStepMarkdown(markdown *model.Markdown, storageType string) (string, error) {
+	resolver, ok := m.resolvers[storageType]
 
 	if !ok {
 		return "", model.CreateDataNotFoundError("resolver_type", storageType)

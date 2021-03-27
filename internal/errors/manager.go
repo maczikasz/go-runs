@@ -5,27 +5,33 @@ import (
 	"github.com/pkg/errors"
 )
 
-type SessionCreator interface {
-	CreateNewSession(runbook model.RunbookRef, err error) string
-}
+type (
+	SessionCreator interface {
+		CreateNewSession(runbook model.RunbookRef, err error) string
+	}
 
-type RunbookFinder interface {
-	FindRunbookForError(e model.Error) (model.RunbookRef, error)
-}
+	RunbookFinder interface {
+		FindRunbookForError(e model.Error) (model.RunbookRef, error)
+	}
 
-type DefaultErrorManager struct {
-	SessionCreator SessionCreator
-	RunbookFinder  RunbookFinder
+	DefaultErrorManager struct {
+		sessionCreator SessionCreator
+		runbookFinder  RunbookFinder
+	}
+)
+
+func NewDefaultErrorManager(sessionCreator SessionCreator, runbookFinder RunbookFinder) *DefaultErrorManager {
+	return &DefaultErrorManager{sessionCreator: sessionCreator, runbookFinder: runbookFinder}
 }
 
 func (manager DefaultErrorManager) ManageErrorWitSession(e model.Error) (string, error) {
-	runbook, err := manager.RunbookFinder.FindRunbookForError(e)
+	runbook, err := manager.runbookFinder.FindRunbookForError(e)
 
 	if err != nil {
 		return "", errors.Wrap(err, "failed to find runbook")
 	}
 
-	sessionId := manager.SessionCreator.CreateNewSession(runbook, err)
+	sessionId := manager.sessionCreator.CreateNewSession(runbook, err)
 
 	return sessionId, nil
 

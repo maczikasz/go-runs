@@ -55,7 +55,7 @@ func (r RunbookHandler) CreateNewRunbook(context *gin.Context) {
 	}
 
 	for _, stepId := range runbook.Steps {
-		_, err := r.runbookStepDetailsFinder.FindRunbookStepDetailsById(stepId)
+		_, _, err := r.runbookStepDetailsFinder.FindRunbookStepDetailsById(stepId)
 		if err != nil {
 			log.Warnf("Could not find step with id %s", stepId)
 			context.Status(http.StatusBadRequest)

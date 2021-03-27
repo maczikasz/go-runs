@@ -3,7 +3,6 @@ package runbooks
 import (
 	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/maczikasz/go-runs/internal/mongodb"
-	"github.com/maczikasz/go-runs/internal/runbooks"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,10 +13,23 @@ type RunbookStepsDataManager struct {
 	Client *mongodb.MongoClient
 }
 
-func (m RunbookStepsDataManager) WriteRunbookStepEntity(entity runbooks.RunbookStepDetailsEntity) (string, error) {
+type runbookStepMongoEntity struct {
+	Id       primitive.ObjectID `bson:"_id,omitempty"`
+	Summary  string             `bson:"summary"`
+	Type     string             `bson:"type"`
+	Location model.RunbookStepLocation
+}
+
+func (m RunbookStepsDataManager) WriteRunbookStepEntity(entity model.RunbookStepDetailsEntity) (string, error) {
 	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("steps")
 	defer rbCancelFunc()
-	insertOneResult, err := rbCollection.InsertOne(rbCtx, entity)
+	mongoEntity := runbookStepMongoEntity{
+		Summary:  entity.Summary,
+		Type:     entity.Type,
+		Location: entity.Location,
+	}
+
+	insertOneResult, err := rbCollection.InsertOne(rbCtx, mongoEntity)
 
 	if err != nil {
 		return "", err
@@ -26,20 +38,27 @@ func (m RunbookStepsDataManager) WriteRunbookStepEntity(entity runbooks.RunbookS
 	return insertOneResult.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (m RunbookStepsDataManager) FindRunbookStepEntityById(id string) (runbooks.RunbookStepDetailsEntity, error) {
+func (m RunbookStepsDataManager) FindRunbookStepData(id string) (model.RunbookStepDetailsEntity, error) {
 	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("steps")
 	defer rbCancelFunc()
-	details := runbooks.RunbookStepDetailsEntity{}
+	details := runbookStepMongoEntity{}
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return runbooks.RunbookStepDetailsEntity{}, errors.Wrap(err, "invalid ID format for mongodb")
+		return model.RunbookStepDetailsEntity{}, errors.Wrap(err, "invalid ID format for mongodb")
 	}
 	err = rbCollection.FindOne(rbCtx, bson.M{"_id": objectID}).Decode(&details)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return runbooks.RunbookStepDetailsEntity{}, model.CreateDataNotFoundError("runbook", id)
+			return model.RunbookStepDetailsEntity{}, model.CreateDataNotFoundError("runbook", id)
 		}
 	}
 
-	return details, nil
+	return model.RunbookStepDetailsEntity{
+		RunbookStepData: model.RunbookStepData{
+			Id:      details.Id.Hex(),
+			Summary: details.Summary,
+			Type:    details.Type,
+		},
+		Location: details.Location,
+	}, nil
 }

@@ -5,7 +5,6 @@ package handlers
 
 import (
 	"github.com/maczikasz/go-runs/internal/model"
-	"github.com/maczikasz/go-runs/internal/runbooks"
 	"sync"
 )
 
@@ -15,7 +14,7 @@ import (
 //
 // 		// make and configure a mocked RunbookStepDetailsFinder
 // 		mockedRunbookStepDetailsFinder := &RunbookStepDetailsFinderMock{
-// 			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepDetails, error) {
+// 			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepData, *model.Markdown, error) {
 // 				panic("mock out the FindRunbookStepDetailsById method")
 // 			},
 // 		}
@@ -26,7 +25,7 @@ import (
 // 	}
 type RunbookStepDetailsFinderMock struct {
 	// FindRunbookStepDetailsByIdFunc mocks the FindRunbookStepDetailsById method.
-	FindRunbookStepDetailsByIdFunc func(id string) (model.RunbookStepDetails, error)
+	FindRunbookStepDetailsByIdFunc func(id string) (model.RunbookStepData, *model.Markdown, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -40,7 +39,7 @@ type RunbookStepDetailsFinderMock struct {
 }
 
 // FindRunbookStepDetailsById calls FindRunbookStepDetailsByIdFunc.
-func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsById(id string) (model.RunbookStepDetails, error) {
+func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsById(id string) (model.RunbookStepData, *model.Markdown, error) {
 	if mock.FindRunbookStepDetailsByIdFunc == nil {
 		panic("RunbookStepDetailsFinderMock.FindRunbookStepDetailsByIdFunc: method is nil but RunbookStepDetailsFinder.FindRunbookStepDetailsById was just called")
 	}
@@ -76,7 +75,7 @@ func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsByIdCalls() []st
 //
 // 		// make and configure a mocked RunbookStepWriter
 // 		mockedRunbookStepWriter := &RunbookStepWriterMock{
-// 			WriteRunbookStepDetailsFunc: func(data model.RunbookStepData, markdown runbooks.Markdown, markdownLocationType string) (string, error) {
+// 			WriteRunbookStepDetailsFunc: func(data model.RunbookStepData, markdown *model.Markdown, markdownLocationType string) (string, error) {
 // 				panic("mock out the WriteRunbookStepDetails method")
 // 			},
 // 		}
@@ -87,7 +86,7 @@ func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsByIdCalls() []st
 // 	}
 type RunbookStepWriterMock struct {
 	// WriteRunbookStepDetailsFunc mocks the WriteRunbookStepDetails method.
-	WriteRunbookStepDetailsFunc func(data model.RunbookStepData, markdown runbooks.Markdown, markdownLocationType string) (string, error)
+	WriteRunbookStepDetailsFunc func(data model.RunbookStepData, markdown *model.Markdown, markdownLocationType string) (string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -96,7 +95,7 @@ type RunbookStepWriterMock struct {
 			// Data is the data argument value.
 			Data model.RunbookStepData
 			// Markdown is the markdown argument value.
-			Markdown runbooks.Markdown
+			Markdown *model.Markdown
 			// MarkdownLocationType is the markdownLocationType argument value.
 			MarkdownLocationType string
 		}
@@ -105,13 +104,13 @@ type RunbookStepWriterMock struct {
 }
 
 // WriteRunbookStepDetails calls WriteRunbookStepDetailsFunc.
-func (mock *RunbookStepWriterMock) WriteRunbookStepDetails(data model.RunbookStepData, markdown runbooks.Markdown, markdownLocationType string) (string, error) {
+func (mock *RunbookStepWriterMock) WriteRunbookStepDetails(data model.RunbookStepData, markdown *model.Markdown, markdownLocationType string) (string, error) {
 	if mock.WriteRunbookStepDetailsFunc == nil {
 		panic("RunbookStepWriterMock.WriteRunbookStepDetailsFunc: method is nil but RunbookStepWriter.WriteRunbookStepDetails was just called")
 	}
 	callInfo := struct {
 		Data                 model.RunbookStepData
-		Markdown             runbooks.Markdown
+		Markdown             *model.Markdown
 		MarkdownLocationType string
 	}{
 		Data:                 data,
@@ -129,12 +128,12 @@ func (mock *RunbookStepWriterMock) WriteRunbookStepDetails(data model.RunbookSte
 //     len(mockedRunbookStepWriter.WriteRunbookStepDetailsCalls())
 func (mock *RunbookStepWriterMock) WriteRunbookStepDetailsCalls() []struct {
 	Data                 model.RunbookStepData
-	Markdown             runbooks.Markdown
+	Markdown             *model.Markdown
 	MarkdownLocationType string
 } {
 	var calls []struct {
 		Data                 model.RunbookStepData
-		Markdown             runbooks.Markdown
+		Markdown             *model.Markdown
 		MarkdownLocationType string
 	}
 	mock.lockWriteRunbookStepDetails.RLock()

@@ -3,7 +3,6 @@ package runbooks
 import (
 	"github.com/maczikasz/go-runs/internal/model"
 	"github.com/maczikasz/go-runs/internal/mongodb"
-	"github.com/maczikasz/go-runs/internal/runbooks"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,6 +12,11 @@ import (
 
 type RunbookDataManager struct {
 	Client *mongodb.MongoClient
+}
+
+type RunbookEntity struct {
+	ID    primitive.ObjectID   `bson:"_id,omitempty"`
+	Steps []primitive.ObjectID `bson:"steps"`
 }
 
 func (m RunbookDataManager) FindRunbookById(id string) (model.RunbookRef, error) {
@@ -30,11 +34,6 @@ func (m RunbookDataManager) FindRunbookById(id string) (model.RunbookRef, error)
 	}
 
 	return model.RunbookRef{Id: id}, nil
-}
-
-type RunbookEntity struct {
-	ID    primitive.ObjectID   `bson:"_id,omitempty"`
-	Steps []primitive.ObjectID `bson:"steps"`
 }
 
 func (m RunbookDataManager) CreateRunbookFromStepIds(steps []string) (string, error) {
@@ -88,11 +87,9 @@ func (m RunbookDataManager) FindRunbookDetailsById(id string) (model.RunbookDeta
 		return model.RunbookDetails{}, err
 	}
 
-	var stepSummaries []runbooks.RunbookStepDetailsEntity
-	//var b []bson.M
+	var stepSummaries []runbookStepMongoEntity
 
 	err = cursor.All(stepCtx, &stepSummaries)
-	//panic(spew.Sdump(b))
 
 	if err != nil {
 		return model.RunbookDetails{}, err
@@ -109,9 +106,11 @@ func (m RunbookDataManager) FindRunbookDetailsById(id string) (model.RunbookDeta
 	var steps []model.RunbookStepData
 
 	for _, summary := range stepSummaries {
-		data := summary.RunbookStepData
-		//TODO really?
-		data.Id = summary.Id
+		data := model.RunbookStepData{
+			Id:      summary.Id.Hex(),
+			Summary: summary.Summary,
+			Type:    summary.Type,
+		}
 
 		steps = append(steps, data)
 	}

@@ -14,6 +14,8 @@ type MongoClient struct {
 	mongo    *mongo.Client
 }
 
+type DisconnectFunction func()
+
 func (c MongoClient) NewGridFSClient() (*gridfs.Bucket, error) {
 	return gridfs.NewBucket(c.mongo.Database(c.database))
 }
@@ -30,8 +32,6 @@ func (c MongoClient) Collection(s string) (*mongo.Collection, context.CancelFunc
 func (c MongoClient) Database() *mongo.Database {
 	return c.mongo.Database(c.database)
 }
-
-type DisconnectFunction func()
 
 func InitializeMongoClient(mongoUrl string, database string) (*MongoClient, DisconnectFunction) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

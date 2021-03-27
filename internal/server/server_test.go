@@ -47,17 +47,16 @@ func TestStartHttpServer(t *testing.T) {
 			},
 		},
 		RunbookStepDetailsFinder: &mocks.RunbookStepDetailsFinderMock{
-			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepDetails, error) {
+			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepData, *model.Markdown, error) {
 				if id == "rbs1" {
-					return model.RunbookStepDetails{
-						RunbookStepData: model.RunbookStepData{
+					return model.RunbookStepData{
 							Summary: "Test workaround 1",
 							Type:    "Workaround",
 						},
-						Markdown: "Test MD 1",
-					}, nil
+						&model.Markdown{Content: "Test MD 1"},
+						nil
 				}
-				return model.RunbookStepDetails{}, model.CreateDataNotFoundError("step_details", id)
+				return model.RunbookStepData{}, nil, model.CreateDataNotFoundError("step_details", id)
 			},
 		},
 		ErrorManager: &mocks.ErrorManagerMock{

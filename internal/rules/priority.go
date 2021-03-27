@@ -1,16 +1,30 @@
 package rules
 
 import (
+	"fmt"
 	"github.com/maczikasz/go-runs/internal/model"
 	"sync"
 )
 
-type PriorityRuleManager struct {
-	ruleLock        *sync.RWMutex
-	nameMatchers    []RuleRunbookPair
-	messageMatchers []RuleRunbookPair
-	tagMatchers     []RuleRunbookPair
-}
+type (
+	RuleRunbookPair struct {
+		RunbookId string
+		Rule      Rule
+	}
+
+	PriorityRuleManager struct {
+		ruleLock        *sync.RWMutex
+		nameMatchers    []RuleRunbookPair
+		messageMatchers []RuleRunbookPair
+		tagMatchers     []RuleRunbookPair
+	}
+
+	PriorityMatcherConfig struct {
+		nameMatchers    map[string][]RuleRunbookPair
+		messageMatchers map[string][]RuleRunbookPair
+		tagMatchers     map[string][]RuleRunbookPair
+	}
+)
 
 const (
 	regex    = "regex"
@@ -18,10 +32,8 @@ const (
 	equal    = "equal"
 )
 
-type PriorityMatcherConfig struct {
-	nameMatchers    map[string][]RuleRunbookPair
-	messageMatchers map[string][]RuleRunbookPair
-	tagMatchers     map[string][]RuleRunbookPair
+func (m RuleRunbookPair) String() string {
+	return fmt.Sprintf("rule: %s, runbook: %s", m.Rule, m.RunbookId)
 }
 
 func (r PriorityMatcherConfig) AddNameRegexMatchers(matchers *map[string]RegexMatcher) *PriorityMatcherConfig {

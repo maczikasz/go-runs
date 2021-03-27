@@ -5,7 +5,7 @@ import (
 	"github.com/maczikasz/go-runs/internal/model"
 )
 
-// A Rule determines wheather an instance of an Error matches the given criteria
+// A Rule determines whether an instance of an Error matches the given criteria
 // represented by the Rule
 type Rule interface {
 	Matches(error model.Error) bool

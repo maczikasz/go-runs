@@ -70,7 +70,7 @@ func DoTestHttpRunbookManagementWithMongo(t *testing.T, client *mongodb.MongoCli
 			router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 
-			var details model.RunbookStepDetails
+			var details dto.RunbookStepDetailDTO
 
 			body, _ := ioutil.ReadAll(w.Body)
 
@@ -105,7 +105,7 @@ func DoTestHttpRunbookManagementWithMongo(t *testing.T, client *mongodb.MongoCli
 
 			body, _ := ioutil.ReadAll(w.Body)
 
-			var details model.RunbookStepDetails
+			var details dto.RunbookStepDetailDTO
 
 			_ = json2.Unmarshal(body, &details)
 
@@ -562,12 +562,10 @@ func initializeRouter(client *mongodb.MongoClient) (*gin.Engine, error) {
 		return nil, err
 	}
 
-	resolver := runbooks.MapRunbookMarkdownResolver{
-		Resolvers: map[string]runbooks.MarkdownHandlers{"gridfs": {
-			Resolver: gridfs.MarkdownResolver{Client: &gridfs.Client{Bucket: fsClient}},
-			Writer:   gridfs.MarkdownWriter{Client: &gridfs.Client{Bucket: fsClient}}},
-		},
-	}
+	resolver := runbooks.BuildNewMapRunbookMarkdownResolver(runbooks.Builder{{"gridfs", runbooks.MarkdownHandlers{
+		Resolver: gridfs.MarkdownResolver{Client: &gridfs.Client{Bucket: fsClient}},
+		Writer:   gridfs.MarkdownWriter{Client: &gridfs.Client{Bucket: fsClient}}},
+	}})
 
 	runbookStepDetailsFinder := runbooks.RunbookStepDetailsFinder{
 		RunbookStepsEntityFinder:    runbookStepsDataManager,
@@ -580,11 +578,8 @@ func initializeRouter(client *mongodb.MongoClient) (*gin.Engine, error) {
 	}
 	ruleManager := rules.FromMatcherConfig(config)
 	sessionManager := sessions.NewInMemorySessionManager()
-	runbookManager := runbooks.RunbookManager{RuleManager: ruleManager, RunbookFinder: runbookDataManager}
-	errorManager := errors.DefaultErrorManager{
-		SessionCreator: sessionManager,
-		RunbookFinder:  runbookManager,
-	}
+	runbookManager := runbooks.NewRunbookManager(ruleManager, runbookDataManager)
+	errorManager := errors.NewDefaultErrorManager(sessionManager, runbookManager)
 	startupContext := StartupContext{
 		RunbookDetailsFinder:     runbookDataManager,
 		SessionStore:             sessionManager,
