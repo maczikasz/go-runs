@@ -16,6 +16,7 @@ type (
 
 	MarkdownWriter interface {
 		WriteMarkdown(markdown *model.Markdown) (string, error)
+		DeleteMarkdown(ref string) error
 	}
 
 	MarkdownHandlers struct {
@@ -54,6 +55,16 @@ func (m MapRunbookMarkdownResolver) ResolveRunbookStepMarkdown(location model.Ru
 	return resolver.Resolver.ResolveMarkdownFromLocationString(location.Ref)
 }
 
+func (m MapRunbookMarkdownResolver) DeleteRunbookMarkdown(location model.RunbookStepLocation) error {
+
+	resolver, ok := m.resolvers[location.LocationType]
+
+	if !ok {
+		return model.CreateDataNotFoundError("resolver_type", location.LocationType)
+	}
+
+	return resolver.Writer.DeleteMarkdown(location.Ref)
+}
 func (m MapRunbookMarkdownResolver) WriteRunbookStepMarkdown(markdown *model.Markdown, storageType string) (string, error) {
 	resolver, ok := m.resolvers[storageType]
 

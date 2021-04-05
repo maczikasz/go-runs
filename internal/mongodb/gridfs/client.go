@@ -75,3 +75,13 @@ func (c Client) WriteFileToLocation(content string, id primitive.ObjectID) error
 	return nil
 
 }
+
+func (c Client) DeleteFileFromLocation(s string) error {
+	objectID, err := primitive.ObjectIDFromHex(s)
+	if err != nil {
+		return errors.Wrap(err, "invalid ID format for mongodb")
+	}
+	err = c.Bucket.Delete(objectID)
+
+	return err
+}

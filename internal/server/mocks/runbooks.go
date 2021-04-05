@@ -14,8 +14,8 @@ import (
 //
 // 		// make and configure a mocked RunbookDetailsWriter
 // 		mockedRunbookDetailsWriter := &RunbookDetailsWriterMock{
-// 			CreateRunbookFromStepIdsFunc: func(steps []string) (string, error) {
-// 				panic("mock out the CreateRunbookFromStepIds method")
+// 			CreateRunbookFromDetailsFunc: func(steps []string, name string) (string, error) {
+// 				panic("mock out the CreateRunbookFromDetails method")
 // 			},
 // 		}
 //
@@ -24,48 +24,54 @@ import (
 //
 // 	}
 type RunbookDetailsWriterMock struct {
-	// CreateRunbookFromStepIdsFunc mocks the CreateRunbookFromStepIds method.
-	CreateRunbookFromStepIdsFunc func(steps []string) (string, error)
+	// CreateRunbookFromDetailsFunc mocks the CreateRunbookFromDetails method.
+	CreateRunbookFromDetailsFunc func(steps []string, name string) (string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// CreateRunbookFromStepIds holds details about calls to the CreateRunbookFromStepIds method.
-		CreateRunbookFromStepIds []struct {
+		// CreateRunbookFromDetails holds details about calls to the CreateRunbookFromDetails method.
+		CreateRunbookFromDetails []struct {
 			// Steps is the steps argument value.
 			Steps []string
+			// Name is the name argument value.
+			Name string
 		}
 	}
-	lockCreateRunbookFromStepIds sync.RWMutex
+	lockCreateRunbookFromDetails sync.RWMutex
 }
 
-// CreateRunbookFromStepIds calls CreateRunbookFromStepIdsFunc.
-func (mock *RunbookDetailsWriterMock) CreateRunbookFromStepIds(steps []string) (string, error) {
-	if mock.CreateRunbookFromStepIdsFunc == nil {
-		panic("RunbookDetailsWriterMock.CreateRunbookFromStepIdsFunc: method is nil but RunbookDetailsWriter.CreateRunbookFromStepIds was just called")
+// CreateRunbookFromDetails calls CreateRunbookFromDetailsFunc.
+func (mock *RunbookDetailsWriterMock) CreateRunbookFromDetails(steps []string, name string) (string, error) {
+	if mock.CreateRunbookFromDetailsFunc == nil {
+		panic("RunbookDetailsWriterMock.CreateRunbookFromDetailsFunc: method is nil but RunbookDetailsWriter.CreateRunbookFromDetails was just called")
 	}
 	callInfo := struct {
 		Steps []string
+		Name  string
 	}{
 		Steps: steps,
+		Name:  name,
 	}
-	mock.lockCreateRunbookFromStepIds.Lock()
-	mock.calls.CreateRunbookFromStepIds = append(mock.calls.CreateRunbookFromStepIds, callInfo)
-	mock.lockCreateRunbookFromStepIds.Unlock()
-	return mock.CreateRunbookFromStepIdsFunc(steps)
+	mock.lockCreateRunbookFromDetails.Lock()
+	mock.calls.CreateRunbookFromDetails = append(mock.calls.CreateRunbookFromDetails, callInfo)
+	mock.lockCreateRunbookFromDetails.Unlock()
+	return mock.CreateRunbookFromDetailsFunc(steps, name)
 }
 
-// CreateRunbookFromStepIdsCalls gets all the calls that were made to CreateRunbookFromStepIds.
+// CreateRunbookFromDetailsCalls gets all the calls that were made to CreateRunbookFromDetails.
 // Check the length with:
-//     len(mockedRunbookDetailsWriter.CreateRunbookFromStepIdsCalls())
-func (mock *RunbookDetailsWriterMock) CreateRunbookFromStepIdsCalls() []struct {
+//     len(mockedRunbookDetailsWriter.CreateRunbookFromDetailsCalls())
+func (mock *RunbookDetailsWriterMock) CreateRunbookFromDetailsCalls() []struct {
 	Steps []string
+	Name  string
 } {
 	var calls []struct {
 		Steps []string
+		Name  string
 	}
-	mock.lockCreateRunbookFromStepIds.RLock()
-	calls = mock.calls.CreateRunbookFromStepIds
-	mock.lockCreateRunbookFromStepIds.RUnlock()
+	mock.lockCreateRunbookFromDetails.RLock()
+	calls = mock.calls.CreateRunbookFromDetails
+	mock.lockCreateRunbookFromDetails.RUnlock()
 	return calls
 }
 
@@ -78,6 +84,9 @@ func (mock *RunbookDetailsWriterMock) CreateRunbookFromStepIdsCalls() []struct {
 // 			FindRunbookDetailsByIdFunc: func(id string) (model.RunbookDetails, error) {
 // 				panic("mock out the FindRunbookDetailsById method")
 // 			},
+// 			ListAllRunbooksFunc: func() ([]model.RunbookSummary, error) {
+// 				panic("mock out the ListAllRunbooks method")
+// 			},
 // 		}
 //
 // 		// use mockedRunbookDetailsFinder in code that requires RunbookDetailsFinder
@@ -88,6 +97,9 @@ type RunbookDetailsFinderMock struct {
 	// FindRunbookDetailsByIdFunc mocks the FindRunbookDetailsById method.
 	FindRunbookDetailsByIdFunc func(id string) (model.RunbookDetails, error)
 
+	// ListAllRunbooksFunc mocks the ListAllRunbooks method.
+	ListAllRunbooksFunc func() ([]model.RunbookSummary, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// FindRunbookDetailsById holds details about calls to the FindRunbookDetailsById method.
@@ -95,8 +107,12 @@ type RunbookDetailsFinderMock struct {
 			// ID is the id argument value.
 			ID string
 		}
+		// ListAllRunbooks holds details about calls to the ListAllRunbooks method.
+		ListAllRunbooks []struct {
+		}
 	}
 	lockFindRunbookDetailsById sync.RWMutex
+	lockListAllRunbooks        sync.RWMutex
 }
 
 // FindRunbookDetailsById calls FindRunbookDetailsByIdFunc.
@@ -127,5 +143,31 @@ func (mock *RunbookDetailsFinderMock) FindRunbookDetailsByIdCalls() []struct {
 	mock.lockFindRunbookDetailsById.RLock()
 	calls = mock.calls.FindRunbookDetailsById
 	mock.lockFindRunbookDetailsById.RUnlock()
+	return calls
+}
+
+// ListAllRunbooks calls ListAllRunbooksFunc.
+func (mock *RunbookDetailsFinderMock) ListAllRunbooks() ([]model.RunbookSummary, error) {
+	if mock.ListAllRunbooksFunc == nil {
+		panic("RunbookDetailsFinderMock.ListAllRunbooksFunc: method is nil but RunbookDetailsFinder.ListAllRunbooks was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockListAllRunbooks.Lock()
+	mock.calls.ListAllRunbooks = append(mock.calls.ListAllRunbooks, callInfo)
+	mock.lockListAllRunbooks.Unlock()
+	return mock.ListAllRunbooksFunc()
+}
+
+// ListAllRunbooksCalls gets all the calls that were made to ListAllRunbooks.
+// Check the length with:
+//     len(mockedRunbookDetailsFinder.ListAllRunbooksCalls())
+func (mock *RunbookDetailsFinderMock) ListAllRunbooksCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockListAllRunbooks.RLock()
+	calls = mock.calls.ListAllRunbooks
+	mock.lockListAllRunbooks.RUnlock()
 	return calls
 }

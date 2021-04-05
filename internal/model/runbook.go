@@ -5,7 +5,14 @@ type (
 		Id string `json:"id"`
 	}
 
+	RunbookSummary struct {
+		Id    string   `json:"id"`
+		Name  string   `json:"name"`
+		Steps []string `json:"steps"`
+	}
+
 	RunbookDetails struct {
+		Name  string            `json:"name"`
 		Steps []RunbookStepData `json:"steps"`
 	}
 

@@ -14,10 +14,13 @@ import (
 type (
 	RunbookDetailsFinder interface {
 		FindRunbookDetailsById(id string) (model.RunbookDetails, error)
+		ListAllRunbooks() ([]model.RunbookSummary, error)
 	}
 
 	RunbookDetailsWriter interface {
-		CreateRunbookFromStepIds(steps []string) (string, error)
+		CreateRunbookFromDetails(steps []string, name string) (string, error)
+		DeleteRunbook(id string) error
+		UpdateRunbook(id string, name string, steps []string) error
 	}
 
 	RunbookHandler struct {
@@ -63,7 +66,7 @@ func (r RunbookHandler) CreateNewRunbook(context *gin.Context) {
 		}
 	}
 
-	runbookId, err := r.runbookDetailsWriter.CreateRunbookFromStepIds(runbook.Steps)
+	runbookId, err := r.runbookDetailsWriter.CreateRunbookFromDetails(runbook.Steps, runbook.Name)
 
 	if err != nil {
 		log.Warnf("Failed to insert runbook %s", err)
@@ -73,4 +76,52 @@ func (r RunbookHandler) CreateNewRunbook(context *gin.Context) {
 	}
 
 	context.String(http.StatusOK, runbookId)
+}
+
+func (r RunbookHandler) ListAllRunbooks(context *gin.Context) {
+	runbooks, err := r.runbookDetailsFinder.ListAllRunbooks()
+	if err != nil {
+		log.Warnf("Failed to find runbooks %s", err)
+		context.Status(http.StatusInternalServerError)
+		_ = context.Error(err)
+		return
+	}
+
+	context.JSON(http.StatusOK, runbooks)
+}
+
+func (r RunbookHandler) DeleteRunbook(context *gin.Context) {
+	runbookId := context.Param("runbookId")
+
+	err := r.runbookDetailsWriter.DeleteRunbook(runbookId)
+
+	err = util.HandleDataError(context, err)
+	if err != nil {
+		return
+	}
+
+	context.Status(http.StatusOK)
+}
+
+func (r RunbookHandler) UpdateRunbook(context *gin.Context) {
+	runbookId := context.Param("runbookId")
+
+	var runbook dto.RunbookDTO
+	err := context.BindJSON(&runbook)
+
+	if err != nil {
+		log.Warnf("Could not parse json %s", err)
+		context.Status(http.StatusBadRequest)
+		return
+	}
+
+	err = r.runbookDetailsWriter.UpdateRunbook(runbookId, runbook.Name, runbook.Steps)
+
+	err = util.HandleDataError(context, err)
+	if err != nil {
+		return
+	}
+
+	context.Status(http.StatusOK)
+
 }

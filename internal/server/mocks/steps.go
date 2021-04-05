@@ -17,6 +17,9 @@ import (
 // 			FindRunbookStepDetailsByIdFunc: func(id string) (model.RunbookStepData, *model.Markdown, error) {
 // 				panic("mock out the FindRunbookStepDetailsById method")
 // 			},
+// 			ListAllStepsFunc: func() ([]model.RunbookStepData, error) {
+// 				panic("mock out the ListAllSteps method")
+// 			},
 // 		}
 //
 // 		// use mockedRunbookStepDetailsFinder in code that requires RunbookStepDetailsFinder
@@ -27,6 +30,9 @@ type RunbookStepDetailsFinderMock struct {
 	// FindRunbookStepDetailsByIdFunc mocks the FindRunbookStepDetailsById method.
 	FindRunbookStepDetailsByIdFunc func(id string) (model.RunbookStepData, *model.Markdown, error)
 
+	// ListAllStepsFunc mocks the ListAllSteps method.
+	ListAllStepsFunc func() ([]model.RunbookStepData, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// FindRunbookStepDetailsById holds details about calls to the FindRunbookStepDetailsById method.
@@ -34,8 +40,12 @@ type RunbookStepDetailsFinderMock struct {
 			// ID is the id argument value.
 			ID string
 		}
+		// ListAllSteps holds details about calls to the ListAllSteps method.
+		ListAllSteps []struct {
+		}
 	}
 	lockFindRunbookStepDetailsById sync.RWMutex
+	lockListAllSteps               sync.RWMutex
 }
 
 // FindRunbookStepDetailsById calls FindRunbookStepDetailsByIdFunc.
@@ -69,12 +79,41 @@ func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsByIdCalls() []st
 	return calls
 }
 
+// ListAllSteps calls ListAllStepsFunc.
+func (mock *RunbookStepDetailsFinderMock) ListAllSteps() ([]model.RunbookStepData, error) {
+	if mock.ListAllStepsFunc == nil {
+		panic("RunbookStepDetailsFinderMock.ListAllStepsFunc: method is nil but RunbookStepDetailsFinder.ListAllSteps was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockListAllSteps.Lock()
+	mock.calls.ListAllSteps = append(mock.calls.ListAllSteps, callInfo)
+	mock.lockListAllSteps.Unlock()
+	return mock.ListAllStepsFunc()
+}
+
+// ListAllStepsCalls gets all the calls that were made to ListAllSteps.
+// Check the length with:
+//     len(mockedRunbookStepDetailsFinder.ListAllStepsCalls())
+func (mock *RunbookStepDetailsFinderMock) ListAllStepsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockListAllSteps.RLock()
+	calls = mock.calls.ListAllSteps
+	mock.lockListAllSteps.RUnlock()
+	return calls
+}
+
 // RunbookStepWriterMock is a mock implementation of RunbookStepWriter.
 //
 // 	func TestSomethingThatUsesRunbookStepWriter(t *testing.T) {
 //
 // 		// make and configure a mocked RunbookStepWriter
 // 		mockedRunbookStepWriter := &RunbookStepWriterMock{
+// 			DeleteStepDetailsFunc: func(id string) error {
+// 				panic("mock out the DeleteStepDetails method")
+// 			},
 // 			WriteRunbookStepDetailsFunc: func(data model.RunbookStepData, markdown *model.Markdown, markdownLocationType string) (string, error) {
 // 				panic("mock out the WriteRunbookStepDetails method")
 // 			},
@@ -85,11 +124,19 @@ func (mock *RunbookStepDetailsFinderMock) FindRunbookStepDetailsByIdCalls() []st
 //
 // 	}
 type RunbookStepWriterMock struct {
+	// DeleteStepDetailsFunc mocks the DeleteStepDetails method.
+	DeleteStepDetailsFunc func(id string) error
+
 	// WriteRunbookStepDetailsFunc mocks the WriteRunbookStepDetails method.
 	WriteRunbookStepDetailsFunc func(data model.RunbookStepData, markdown *model.Markdown, markdownLocationType string) (string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// DeleteStepDetails holds details about calls to the DeleteStepDetails method.
+		DeleteStepDetails []struct {
+			// ID is the id argument value.
+			ID string
+		}
 		// WriteRunbookStepDetails holds details about calls to the WriteRunbookStepDetails method.
 		WriteRunbookStepDetails []struct {
 			// Data is the data argument value.
@@ -100,7 +147,39 @@ type RunbookStepWriterMock struct {
 			MarkdownLocationType string
 		}
 	}
+	lockDeleteStepDetails       sync.RWMutex
 	lockWriteRunbookStepDetails sync.RWMutex
+}
+
+// DeleteStepDetails calls DeleteStepDetailsFunc.
+func (mock *RunbookStepWriterMock) DeleteStepDetails(id string) error {
+	if mock.DeleteStepDetailsFunc == nil {
+		panic("RunbookStepWriterMock.DeleteStepDetailsFunc: method is nil but RunbookStepWriter.DeleteStepDetails was just called")
+	}
+	callInfo := struct {
+		ID string
+	}{
+		ID: id,
+	}
+	mock.lockDeleteStepDetails.Lock()
+	mock.calls.DeleteStepDetails = append(mock.calls.DeleteStepDetails, callInfo)
+	mock.lockDeleteStepDetails.Unlock()
+	return mock.DeleteStepDetailsFunc(id)
+}
+
+// DeleteStepDetailsCalls gets all the calls that were made to DeleteStepDetails.
+// Check the length with:
+//     len(mockedRunbookStepWriter.DeleteStepDetailsCalls())
+func (mock *RunbookStepWriterMock) DeleteStepDetailsCalls() []struct {
+	ID string
+} {
+	var calls []struct {
+		ID string
+	}
+	mock.lockDeleteStepDetails.RLock()
+	calls = mock.calls.DeleteStepDetails
+	mock.lockDeleteStepDetails.RUnlock()
+	return calls
 }
 
 // WriteRunbookStepDetails calls WriteRunbookStepDetailsFunc.

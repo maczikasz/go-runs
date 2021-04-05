@@ -54,6 +54,7 @@ func main() {
 	stepDetailsWriter := runbooks.RunbookStepDetailsWriter{
 		RunbookStepsEntityWriter:  runbookStepsDataManager,
 		RunbookStepMarkdownWriter: resolver,
+		RunbookStepEntityFinder:   runbookStepsDataManager,
 	}
 	ruleManager := rules.FromMatcherConfig(config)
 	sessionManager := sessions.NewInMemorySessionManager()
@@ -69,6 +70,7 @@ func main() {
 		RuleMatcher:              ruleManager,
 		RunbookStepDetailsWriter: stepDetailsWriter,
 		RunbookDetailsWriter:     runbookDataManager,
+		ReverseRunbookFinder:     runbookDataManager,
 		RuleReloader: func() {
 
 			config, err := rules2.LoadPriorityRuleConfigFromMongodb(client)

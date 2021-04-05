@@ -13,6 +13,9 @@ type MarkdownWriter struct {
 	Client *Client
 }
 
+func (m MarkdownWriter) DeleteMarkdown(ref string) error {
+	return m.Client.DeleteFileFromLocation(ref)
+}
 func (m MarkdownWriter) WriteMarkdown(markdown *model.Markdown) (string, error) {
 	id := primitive.NewObjectID()
 	err := m.Client.WriteFileToLocation(markdown.Content, id)

@@ -10,8 +10,8 @@ type RuleCreateDTO struct {
 }
 
 type RunbookStepDetailDTO struct {
-	model.RunbookStepData `json:"inline"`
-	Markdown        string `json:"markdown"`
+	model.RunbookStepData `json:",inline"`
+	Markdown              string `json:"markdown"`
 }
 
 type StepDTO struct {
@@ -26,6 +26,6 @@ type MarkdownInfo struct {
 }
 
 type RunbookDTO struct {
+	Name  string
 	Steps []string
 }
-

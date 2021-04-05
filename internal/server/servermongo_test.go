@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -117,7 +118,7 @@ func DoTestHttpRunbookManagementWithMongo(t *testing.T, client *mongodb.MongoCli
 	})
 
 	Convey("When new runbook is created with the steps", t, func() {
-		bytes, _ := json2.Marshal(dto.RunbookDTO{Steps: []string{step1Id, step2Id}})
+		bytes, _ := json2.Marshal(dto.RunbookDTO{Name: "Runbook 1", Steps: []string{step1Id, step2Id}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/runbooks", bytes2.NewReader(bytes))
 		w := httptest.NewRecorder()
@@ -127,33 +128,55 @@ func DoTestHttpRunbookManagementWithMongo(t *testing.T, client *mongodb.MongoCli
 
 		runbookId := w.Body.String()
 
-		Convey("Then runbook steps could be read back", func() {
-
-			r, _ := http.NewRequest(http.MethodGet, "/runbooks/"+runbookId, bytes2.NewReader(bytes))
+		Convey("Then runbook exists in the list", func() {
+			r, _ := http.NewRequest(http.MethodGet, "/runbooks", nil)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
 
-			var details model.RunbookDetails
+			var summaries []model.RunbookSummary
 			body, _ := ioutil.ReadAll(w.Body)
 
-			_ = json2.Unmarshal(body, &details)
+			_ = json2.Unmarshal(body, &summaries)
 
-			So(details.Steps, test_utils.ShouldMatch, func(value interface{}) bool {
-				if step, ok := value.(model.RunbookStepData); ok {
-					return step.Id == step1Id && step.Summary == step1.Summary && step.Type == step1.Type
+			So(summaries, test_utils.ShouldMatch, func(value interface{}) bool {
+				if summary, ok := value.(model.RunbookSummary); ok {
+					return summary.Name == "Runbook 1" && reflect.DeepEqual(summary.Steps, []string{step1Id, step2Id})
 				}
-
 				return false
 			})
 
-			So(details.Steps, test_utils.ShouldMatch, func(value interface{}) bool {
-				if step, ok := value.(model.RunbookStepData); ok {
-					return step.Id == step2Id && step.Summary == step2.Summary && step.Type == step2.Type
-				}
+			Convey("Then runbook steps could be read back", func() {
 
-				return false
+				r, _ := http.NewRequest(http.MethodGet, "/runbooks/"+runbookId, bytes2.NewReader(bytes))
+				w := httptest.NewRecorder()
+
+				router.ServeHTTP(w, r)
+				So(w.Code, ShouldEqual, http.StatusOK)
+
+				var details model.RunbookDetails
+				body, _ := ioutil.ReadAll(w.Body)
+
+				_ = json2.Unmarshal(body, &details)
+
+				So(details.Name, ShouldEqual, "Runbook 1")
+
+				So(details.Steps, test_utils.ShouldMatch, func(value interface{}) bool {
+					if step, ok := value.(model.RunbookStepData); ok {
+						return step.Id == step1Id && step.Summary == step1.Summary && step.Type == step1.Type
+					}
+
+					return false
+				})
+
+				So(details.Steps, test_utils.ShouldMatch, func(value interface{}) bool {
+					if step, ok := value.(model.RunbookStepData); ok {
+						return step.Id == step2Id && step.Summary == step2.Summary && step.Type == step2.Type
+					}
+
+					return false
+				})
 			})
 		})
 
@@ -221,7 +244,7 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 
 		step2Id = w.Body.String()
 
-		bytes, _ = json2.Marshal(dto.RunbookDTO{Steps: []string{step1Id}})
+		bytes, _ = json2.Marshal(dto.RunbookDTO{Name: "Runbook 1", Steps: []string{step1Id}})
 
 		r, _ = http.NewRequest(http.MethodPost, "/runbooks", bytes2.NewReader(bytes))
 		w = httptest.NewRecorder()
@@ -231,7 +254,7 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 
 		runbookId = w.Body.String()
 
-		bytes, _ = json2.Marshal(dto.RunbookDTO{Steps: []string{step2Id}})
+		bytes, _ = json2.Marshal(dto.RunbookDTO{Name: "Runbook 2", Steps: []string{step2Id}})
 
 		r, _ = http.NewRequest(http.MethodPost, "/runbooks", bytes2.NewReader(bytes))
 		w = httptest.NewRecorder()
@@ -344,6 +367,7 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 
 		_ = json2.Unmarshal(body, &details)
 
+		So(details.Name, ShouldEqual, "Runbook 1")
 		So(details.Steps, test_utils.ShouldMatch, func(value interface{}) bool {
 			if step, ok := value.(model.RunbookStepData); ok {
 				return step.Id == step1Id && step.Summary == step1.Summary && step.Type == step1.Type
@@ -469,6 +493,8 @@ func DoTestHttpServerWithMongo(t *testing.T, client *mongodb.MongoClient) error 
 		body, _ := ioutil.ReadAll(w.Body)
 
 		_ = json2.Unmarshal(body, &details)
+
+		So(details.Name, ShouldEqual, "Runbook 2")
 
 		So(details.Steps, test_utils.ShouldMatch, func(value interface{}) bool {
 			if step, ok := value.(model.RunbookStepData); ok {

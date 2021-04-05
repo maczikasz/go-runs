@@ -20,6 +20,58 @@ type runbookStepMongoEntity struct {
 	Location model.RunbookStepLocation
 }
 
+func (m RunbookStepsDataManager) DeleteStepDetails(id string) error {
+	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("steps")
+	defer rbCancelFunc()
+
+	hex, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return errors.Wrap(err, "invalid ID format for mongodb")
+	}
+	_, err = rbCollection.DeleteOne(rbCtx, bson.M{"_id": hex})
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return model.CreateDataNotFoundError("runbook", id)
+		}
+	}
+
+	return nil
+
+}
+
+func (m RunbookStepsDataManager) UpdateRunbookStepEntity(id string, entity model.RunbookStepDetailsEntity) error {
+
+	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("steps")
+	defer rbCancelFunc()
+
+	hex, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return errors.Wrap(err, "invalid ID format for mongodb")
+	}
+
+	mongoEntity := runbookStepMongoEntity{
+		Id:       hex,
+		Summary:  entity.Summary,
+		Type:     entity.Type,
+		Location: entity.Location,
+	}
+
+	res, err := rbCollection.ReplaceOne(rbCtx, bson.M{"_id": hex}, mongoEntity)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount == 0 {
+		return model.CreateDataNotFoundError("step", id)
+	}
+
+	return nil
+}
+
 func (m RunbookStepsDataManager) WriteRunbookStepEntity(entity model.RunbookStepDetailsEntity) (string, error) {
 	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("steps")
 	defer rbCancelFunc()
@@ -36,6 +88,38 @@ func (m RunbookStepsDataManager) WriteRunbookStepEntity(entity model.RunbookStep
 	}
 
 	return insertOneResult.InsertedID.(primitive.ObjectID).Hex(), nil
+}
+
+func (m RunbookStepsDataManager) ListAllSteps() (result []model.RunbookStepData, err error) {
+	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("steps")
+	defer rbCancelFunc()
+	cursor, err := rbCollection.Find(rbCtx, bson.D{})
+
+	if err != nil {
+		return
+	}
+
+	var entities []runbookStepMongoEntity
+	err = cursor.All(rbCtx, &entities)
+
+	if err != nil {
+		return
+	}
+
+	for _, v := range entities {
+		result = append(result, model.RunbookStepData{
+			Id:      v.Id.Hex(),
+			Summary: v.Summary,
+			Type:    v.Type,
+		})
+	}
+
+	if result == nil {
+		result = []model.RunbookStepData{}
+		return
+	}
+
+	return
 }
 
 func (m RunbookStepsDataManager) FindRunbookStepData(id string) (model.RunbookStepDetailsEntity, error) {

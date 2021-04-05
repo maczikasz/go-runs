@@ -26,6 +26,7 @@ type StartupContext struct {
 	RuleMatcher              runbooks.RuleMatcher
 	RunbookStepDetailsWriter handlers.RunbookStepWriter
 	RunbookDetailsWriter     handlers.RunbookDetailsWriter
+	ReverseRunbookFinder     handlers.ReverseRunbookFinder
 	RuleReloader             func()
 }
 
@@ -47,7 +48,7 @@ func SetupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine 
 	errorHandler := handlers.NewIncomingErrorHandler(context.ErrorManager)
 	sessionHandler := handlers.NewSessionHandler(context.SessionStore)
 	runbookHandler := handlers.NewRunbookHandler(context.RunbookDetailsFinder, context.RunbookDetailsWriter, context.RunbookStepDetailsFinder)
-	runbookStepDetailsHandler := handlers.NewRunbookStepDetailsHandler(context.RunbookStepDetailsFinder, context.RunbookStepDetailsWriter)
+	runbookStepDetailsHandler := handlers.NewRunbookStepDetailsHandler(context.RunbookStepDetailsFinder, context.RunbookStepDetailsWriter, context.ReverseRunbookFinder)
 	ruleHandler := handlers.NewRuleHandler(context.RuleSaver, context.RuleFinder, context.RuleMatcher, context.RuleReloader)
 
 	r.POST("/rules", ruleHandler.AddNewRule)
@@ -55,12 +56,24 @@ func SetupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine 
 	r.DELETE("/rules/:ruleId", ruleHandler.DisableRule)
 	r.PUT("/rules/:ruleId", ruleHandler.UpdateRule)
 	r.GET("/rules/match", ruleHandler.TestRuleMatch)
+
 	r.POST("/errors", errorHandler.SubmitError)
+
 	r.GET("/sessions/:sessionId", sessionHandler.LookupSession)
-	r.GET("/runbooks/:runbookId", runbookHandler.RetrieveRunbook)
+	r.PUT("/sessions/:sessionId/:stepId", sessionHandler.CompleteStepInSession)
+	r.GET("/sessions", sessionHandler.ListAllSessions)
+
 	r.GET("/details/:stepId", runbookStepDetailsHandler.RetrieveRunbookStepDetails)
+	r.DELETE("/details/:stepId", runbookStepDetailsHandler.DeleteRunbookStep)
+	r.PUT("/details/:stepId", runbookStepDetailsHandler.UpdateRunbookStep)
 	r.POST("/details", runbookStepDetailsHandler.CreateNewStep)
+	r.GET("/details", runbookStepDetailsHandler.ListAllSteps)
+
 	r.POST("/runbooks", runbookHandler.CreateNewRunbook)
+	r.GET("/runbooks", runbookHandler.ListAllRunbooks)
+	r.GET("/runbooks/:runbookId", runbookHandler.RetrieveRunbook)
+	r.DELETE("/runbooks/:runbookId", runbookHandler.DeleteRunbook)
+	r.PUT("/runbooks/:runbookId", runbookHandler.UpdateRunbook)
 
 	return r
 }

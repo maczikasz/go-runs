@@ -16,7 +16,38 @@ type RunbookDataManager struct {
 
 type RunbookEntity struct {
 	ID    primitive.ObjectID   `bson:"_id,omitempty"`
+	Name  string               `bson:"name"`
 	Steps []primitive.ObjectID `bson:"steps"`
+}
+
+func (m RunbookDataManager) FindRunbooksByStepId(stepId string) ([]model.RunbookRef, error) {
+	collection, cancelFunc, ctx := m.Client.Collection("runbooks")
+	defer cancelFunc()
+	hex, err := primitive.ObjectIDFromHex(stepId)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid ID format for mongodb")
+	}
+
+	cursor, err := collection.Find(ctx, bson.M{"steps": hex})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var entities []RunbookEntity
+
+	err = cursor.All(ctx, &entities)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []model.RunbookRef
+
+	for _, entity := range entities {
+		result = append(result, model.RunbookRef{Id: entity.ID.Hex()})
+	}
+
+	return result, nil
 }
 
 func (m RunbookDataManager) FindRunbookById(id string) (model.RunbookRef, error) {
@@ -36,7 +67,65 @@ func (m RunbookDataManager) FindRunbookById(id string) (model.RunbookRef, error)
 	return model.RunbookRef{Id: id}, nil
 }
 
-func (m RunbookDataManager) CreateRunbookFromStepIds(steps []string) (string, error) {
+func (m RunbookDataManager) DeleteRunbook(id string) error {
+	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("runbooks")
+	defer rbCancelFunc()
+
+	hex, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.Wrap(err, "invalid ID format for mongodb")
+	}
+
+	result, err := rbCollection.DeleteOne(rbCtx, bson.M{"_id": hex})
+
+	if err != nil {
+		return err
+	}
+
+	if result.DeletedCount == 0 {
+		return model.CreateDataNotFoundError("runbook", id)
+	}
+
+	return nil
+}
+
+func (m RunbookDataManager) UpdateRunbook(id string, name string, steps []string) error {
+	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("runbooks")
+	defer rbCancelFunc()
+
+	hex, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.Wrap(err, "invalid ID format for mongodb")
+	}
+
+	var objectIdSteps []primitive.ObjectID
+
+	for _, stepId := range steps {
+		//We can safely ignore error as steps should be verified before
+		hex, _ := primitive.ObjectIDFromHex(stepId)
+		objectIdSteps = append(objectIdSteps, hex)
+	}
+
+	runbookEntity := RunbookEntity{
+		ID:    hex,
+		Name:  name,
+		Steps: objectIdSteps,
+	}
+	result, err := rbCollection.ReplaceOne(rbCtx, bson.M{"_id": hex}, &runbookEntity)
+
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return model.CreateDataNotFoundError("runbook", id)
+	}
+
+	return nil
+
+}
+
+func (m RunbookDataManager) CreateRunbookFromDetails(steps []string, name string) (string, error) {
 
 	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("runbooks")
 	defer rbCancelFunc()
@@ -50,6 +139,7 @@ func (m RunbookDataManager) CreateRunbookFromStepIds(steps []string) (string, er
 	}
 
 	runbookEntity := RunbookEntity{
+		Name:  name,
 		Steps: objectIdSteps,
 	}
 
@@ -61,6 +151,44 @@ func (m RunbookDataManager) CreateRunbookFromStepIds(steps []string) (string, er
 
 	return insertOneResult.InsertedID.(primitive.ObjectID).Hex(), nil
 
+}
+
+func (m RunbookDataManager) ListAllRunbooks() ([]model.RunbookSummary, error) {
+	rbCollection, rbCancelFunc, rbCtx := m.Client.Collection("runbooks")
+	defer rbCancelFunc()
+	var entities []RunbookEntity
+
+	cursor, err := rbCollection.Find(rbCtx, bson.M{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = cursor.All(rbCtx, &entities)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var result []model.RunbookSummary
+
+	for _, entity := range entities {
+		var steps []string
+		for _, step := range entity.Steps {
+			steps = append(steps, step.Hex())
+		}
+		result = append(result, model.RunbookSummary{
+			Id:    entity.ID.Hex(),
+			Name:  entity.Name,
+			Steps: steps,
+		})
+	}
+
+	if result == nil {
+		return []model.RunbookSummary{}, nil
+	}
+
+	return result, nil
 }
 
 func (m RunbookDataManager) FindRunbookDetailsById(id string) (model.RunbookDetails, error) {
@@ -114,5 +242,5 @@ func (m RunbookDataManager) FindRunbookDetailsById(id string) (model.RunbookDeta
 
 		steps = append(steps, data)
 	}
-	return model.RunbookDetails{Steps: steps}, nil
+	return model.RunbookDetails{Name: runbook.Name, Steps: steps}, nil
 }

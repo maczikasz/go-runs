@@ -46,12 +46,14 @@ func WriteJsonResponse(r http.ResponseWriter, value interface{}) error {
 func HandleDataError(context *gin.Context, err error) error {
 	if err != nil {
 		if dnfError, ok := err.(*model.DataNotFoundError); ok {
-			log.Debug(dnfError)
-			context.Status(404)
+			log.Debug("failed to find data: %s", dnfError)
+			_ = context.Error(dnfError)
+			context.Status(http.StatusNotFound)
 			_ = context.Error(err)
 		} else {
-			log.Errorf("failed to find data: %s", err)
-			context.Status(500)
+			log.Error(err)
+			_ = context.Error(err)
+			context.Status(http.StatusInternalServerError)
 			_ = context.Error(err)
 		}
 		return err
