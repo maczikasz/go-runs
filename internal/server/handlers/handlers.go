@@ -14,7 +14,6 @@ type (
 	SessionStore interface {
 		GetSession(s string) (model.Session, error)
 		GetAllSessions() ([]model.Session, error)
-		UpdateSession(session model.Session) error
 		CompleteStepInSession(sessionId string, stepId string, now time.Time) error
 	}
 

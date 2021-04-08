@@ -9,7 +9,7 @@ import (
 	"github.com/maczikasz/go-runs/internal/rules"
 	"github.com/maczikasz/go-runs/internal/runbooks"
 	"github.com/maczikasz/go-runs/internal/server"
-	"github.com/maczikasz/go-runs/internal/sessions"
+	mongodb2 "github.com/maczikasz/go-runs/internal/sessions/mongodb"
 	log "github.com/sirupsen/logrus"
 	"sync"
 )
@@ -57,7 +57,7 @@ func main() {
 		RunbookStepEntityFinder:   runbookStepsDataManager,
 	}
 	ruleManager := rules.FromMatcherConfig(config)
-	sessionManager := sessions.NewInMemorySessionManager()
+	sessionManager := mongodb2.NewMongoDBSessionManager(client)
 	runbookManager := runbooks.NewRunbookManager(ruleManager, runbookDataManager)
 	errorManager := errors.NewDefaultErrorManager(sessionManager, runbookManager)
 	startupContext := server.StartupContext{

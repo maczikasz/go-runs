@@ -28,6 +28,10 @@ type (
 	}
 )
 
+func NewMongoDBSessionManager(mongoClient *mongodb.MongoClient) *SessionManager {
+	return &SessionManager{mongoClient: mongoClient}
+}
+
 func (s SessionManager) CreateNewSession(runbook model.RunbookRef, error model.Error) (string, error) {
 	collection, cancelFunc, ctx := s.mongoClient.Collection("sessions")
 	defer cancelFunc()

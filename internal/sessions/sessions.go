@@ -12,10 +12,25 @@ type InMemorySessionManager struct {
 	sessions map[string]model.Session
 }
 
-func (s *InMemorySessionManager) CreateNewSession(runbook model.RunbookRef, err model.Error) (string, model.Error) {
+func (s *InMemorySessionManager) CompleteStepInSession(sessionId string, stepId string, now time.Time) error {
+	s.rwLock.Lock()
+	defer s.rwLock.Unlock()
+
+	res, ok := s.sessions[sessionId]
+
+	if !ok {
+		return model.CreateDataNotFoundError("session", sessionId)
+	}
+
+	res.Stats.CompletedSteps[stepId] = now
+
+	return nil
+}
+
+func (s *InMemorySessionManager) CreateNewSession(runbook model.RunbookRef, err model.Error) (string, error) {
 	sessionId := uuid.New().String()
 	newSession := model.Session{
-		Runbook:   r,
+		Runbook:   runbook,
 		SessionId: sessionId,
 		Stats: model.SessionStatistics{
 			CompletedSteps: map[string]time.Time{},
@@ -24,7 +39,7 @@ func (s *InMemorySessionManager) CreateNewSession(runbook model.RunbookRef, err 
 	}
 	s.sessions[sessionId] = newSession
 
-	return sessionId,
+	return sessionId, nil
 }
 
 func NewInMemorySessionManager() *InMemorySessionManager {
@@ -56,25 +71,4 @@ func (s *InMemorySessionManager) GetSession(sessionId string) (model.Session, er
 	}
 
 	return res, nil
-}
-
-func (s *InMemorySessionManager) UpdateSession(session model.Session) error {
-
-	s.rwLock.Lock()
-	defer s.rwLock.Unlock()
-
-	storedSession, ok := s.sessions[session.SessionId]
-	if !ok {
-		return model.CreateDataNotFoundError("session", session.SessionId)
-	}
-
-	for k, v := range session.Stats.CompletedSteps {
-		if storedSession.Stats.CompletedSteps[k] != v {
-			storedSession.Stats.CompletedSteps[k] = v
-		}
-	}
-
-	s.sessions[session.SessionId] = storedSession
-
-	return nil
 }
