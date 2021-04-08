@@ -3,11 +3,17 @@ package test_utils
 import "reflect"
 
 func ShouldMatch(actual interface{}, expected ...interface{}) string {
+	if actual == nil {
+		return "This assertion does not work on nil values"
+	}
 	if len(expected) != 1 {
 		return "This assertion requires exactly 1 expected value"
 	}
 
 	v := reflect.ValueOf(actual)
+	if v.IsNil() {
+		return "This assertion does not work on nil values"
+	}
 	if v.Kind() == reflect.Ptr {
 		v = reflect.Indirect(v)
 	}

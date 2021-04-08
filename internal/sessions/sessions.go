@@ -12,7 +12,7 @@ type InMemorySessionManager struct {
 	sessions map[string]model.Session
 }
 
-func (s *InMemorySessionManager) CreateNewSession(r model.RunbookRef, err model.Error) string {
+func (s *InMemorySessionManager) CreateNewSession(runbook model.RunbookRef, err model.Error) (string, model.Error) {
 	sessionId := uuid.New().String()
 	newSession := model.Session{
 		Runbook:   r,
@@ -24,7 +24,7 @@ func (s *InMemorySessionManager) CreateNewSession(r model.RunbookRef, err model.
 	}
 	s.sessions[sessionId] = newSession
 
-	return sessionId
+	return sessionId,
 }
 
 func NewInMemorySessionManager() *InMemorySessionManager {

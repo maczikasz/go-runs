@@ -15,6 +15,7 @@ type (
 		GetSession(s string) (model.Session, error)
 		GetAllSessions() ([]model.Session, error)
 		UpdateSession(session model.Session) error
+		CompleteStepInSession(sessionId string, stepId string, now time.Time) error
 	}
 
 	SessionHandler struct {
@@ -54,16 +55,7 @@ func (s SessionHandler) CompleteStepInSession(context *gin.Context) {
 	sessionId := context.Param("sessionId")
 	stepId := context.Param("stepId")
 
-	session, err := s.sessionStore.GetSession(sessionId)
-
-	err = util.HandleDataError(context, err)
-	if err != nil {
-		return
-	}
-
-	session.Stats.CompletedSteps[stepId] = time.Now()
-
-	err = s.sessionStore.UpdateSession(session)
+	err := s.sessionStore.CompleteStepInSession(sessionId, stepId, time.Now())
 
 	err = util.HandleDataError(context, err)
 	if err != nil {

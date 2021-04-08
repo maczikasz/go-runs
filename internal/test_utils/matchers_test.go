@@ -134,3 +134,10 @@ func TestShouldMatchMapPtrMapMatcher(t *testing.T) {
 		})
 	})
 }
+
+func TestNilParameter(t *testing.T) {
+	Convey("When should matcher supplied with nil value it fails", t, func() {
+		result := ShouldMatch(nil, func(value interface{}) bool { return true })
+		So(result, ShouldNotEqual, "")
+	})
+}
