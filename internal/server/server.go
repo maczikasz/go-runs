@@ -34,7 +34,7 @@ func SetupRouter(context *StartupContext, acceptedOrigins []string) *gin.Engine 
 	r := gin.Default()
 
 	config := cors.Config{
-		AllowHeaders: []string{"Content-type", "Origin"},
+		AllowHeaders: []string{"Content-type", "Origin", "Authorize"},
 		AllowMethods: []string{"POST", "GET", "DELETE", "PUT"},
 	}
 	if len(acceptedOrigins) == 0 {
