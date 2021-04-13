@@ -33,22 +33,24 @@ func (c MongoClient) Database() *mongo.Database {
 	return c.mongo.Database(c.database)
 }
 
-func InitializeMongoClient(mongoUrl string, database string) (*MongoClient, DisconnectFunction) {
+func InitializeMongoClient(mongoUrl string, database string) (*MongoClient, DisconnectFunction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoUrl))
 
 	if err != nil {
 		log.Errorf("Failed to connect to mongo %s", err)
-		panic("Failed to connect to mongodb")
+		return nil, nil, err
 	}
 
 	return &MongoClient{
 			database: database,
 			mongo:    client,
 		}, func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 			if err = client.Disconnect(ctx); err != nil {
 				panic(err)
 			}
-		}
+		}, nil
 }

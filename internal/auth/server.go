@@ -5,23 +5,9 @@ import (
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/oauth2"
 	"net/http"
 	"sync"
 )
-
-type AuthContext struct {
-	oauthConfig *oauth2.Config
-	logoutUrl   string
-}
-
-func (c AuthContext) LogoutUrl() string {
-	return c.logoutUrl + "?client_id=" + c.oauthConfig.ClientID
-}
-
-func NewAuthContext(oauthConfig *oauth2.Config, logoutUrl string) *AuthContext {
-	return &AuthContext{oauthConfig: oauthConfig, logoutUrl: logoutUrl}
-}
 
 func StartHttpServer(wg *sync.WaitGroup, authContext *AuthContext) {
 	defer wg.Done()

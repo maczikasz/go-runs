@@ -7,7 +7,7 @@ import (
 type (
 	E struct {
 		Key   string
-		Value MarkdownHandlers
+		Value *MarkdownHandlers
 	}
 
 	MarkdownResolver interface {
@@ -25,14 +25,14 @@ type (
 	}
 
 	MapRunbookMarkdownResolver struct {
-		resolvers map[string]MarkdownHandlers
+		resolvers map[string]*MarkdownHandlers
 	}
 )
 
 type Builder []E
 
 func BuildNewMapRunbookMarkdownResolver(resolverList Builder) *MapRunbookMarkdownResolver {
-	resolvers := make(map[string]MarkdownHandlers)
+	resolvers := make(map[string]*MarkdownHandlers)
 
 	for _, resolver := range resolverList {
 		resolvers[resolver.Key] = resolver.Value
@@ -41,7 +41,7 @@ func BuildNewMapRunbookMarkdownResolver(resolverList Builder) *MapRunbookMarkdow
 	return NewMapRunbookMarkdownResolver(resolvers)
 }
 
-func NewMapRunbookMarkdownResolver(resolvers map[string]MarkdownHandlers) *MapRunbookMarkdownResolver {
+func NewMapRunbookMarkdownResolver(resolvers map[string]*MarkdownHandlers) *MapRunbookMarkdownResolver {
 	return &MapRunbookMarkdownResolver{resolvers: resolvers}
 }
 

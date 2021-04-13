@@ -1,9 +1,13 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"github.com/maczikasz/go-runs/internal/auth"
+	authconfig "github.com/maczikasz/go-runs/internal/wire/auth"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
+	"github.com/spf13/viper"
+	"os"
 	"sync"
 )
 
@@ -12,21 +16,28 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	fusionAuthConfig := &oauth2.Config{
-		RedirectURL:  "http://localhost:3000/oauth-callback",
-		ClientID:     "3b37d069-f806-465e-92a2-3ef9f8ef9ca3",
-		ClientSecret: "47_bqYSB0azC8hSWyUrCTpL6StVRPfAjBVp5Kv5Tz6k",
-		Scopes:       []string{"openid"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:   "http://localhost:9011/oauth2/authorize",
-			TokenURL:  "http://localhost:9011/oauth2/token",
-			AuthStyle: oauth2.AuthStyleInHeader,
-		},
+	config := flag.String("config", "", "Path to the config file (JSON,TOML,YAML,HCL,env, Java properties), if not set config is assumed to be YAML and read from stdin")
+
+	flag.Parse()
+
+	if *config == "" {
+		viper.SetConfigType("YAML")
+		err := viper.ReadConfig(os.Stdin)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		viper.SetConfigFile(*config)
+		err := viper.ReadInConfig()
+		if err != nil {
+			panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		}
 	}
 
-	authContext := auth.NewAuthContext(fusionAuthConfig," http://localhost:9011/oauth2/logout")
+	viper.AutomaticEnv()
 
-	auth.StartHttpServer(&wg, authContext)
+	context := authconfig.InitializeAuthContext()
+	auth.StartHttpServer(&wg, context)
 	wg.Wait()
 
 }

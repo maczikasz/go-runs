@@ -1,0 +1,11 @@
+auth:
+  redirect: "http://localhost:3000/oauth-callback"
+  client:
+    id: "3b37d069-f806-465e-92a2-3ef9f8ef9ca3"
+    secret: "47_bqYSB0azC8hSWyUrCTpL6StVRPfAjBVp5Kv5Tz6k"
+  scopes:
+    - "openid"
+  endpoint:
+    auth: "http://localhost:9011/oauth2/authorize"
+    token: "http://localhost:9011/oauth2/token"
+    logout: "http://localhost:9011/oauth2/logout"

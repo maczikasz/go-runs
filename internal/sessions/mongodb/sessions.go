@@ -158,6 +158,10 @@ func (s SessionManager) GetAllSessions() ([]model.Session, error) {
 		})
 	}
 
+	if result == nil {
+		return []model.Session{}, nil
+	}
+
 	return result, nil
 }
 

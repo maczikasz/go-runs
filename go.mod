@@ -13,6 +13,7 @@ require (
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/uuid v1.2.0
+	github.com/google/wire v0.5.0 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -24,6 +25,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/goconvey v1.6.4
+	github.com/spf13/viper v1.7.1 // indirect
 	github.com/ugorji/go v1.2.4 // indirect
 	github.com/urfave/negroni v1.0.0
 	go.mongodb.org/mongo-driver v1.5.0

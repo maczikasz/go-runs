@@ -1,16 +1,13 @@
 package main
 
 import (
-	"github.com/maczikasz/go-runs/internal/errors"
-	"github.com/maczikasz/go-runs/internal/mongodb"
-	"github.com/maczikasz/go-runs/internal/mongodb/gridfs"
-	rules2 "github.com/maczikasz/go-runs/internal/mongodb/rules"
-	runbooks2 "github.com/maczikasz/go-runs/internal/mongodb/runbooks"
-	"github.com/maczikasz/go-runs/internal/rules"
-	"github.com/maczikasz/go-runs/internal/runbooks"
+	"flag"
+	"fmt"
 	"github.com/maczikasz/go-runs/internal/server"
-	mongodb2 "github.com/maczikasz/go-runs/internal/sessions/mongodb"
+	"github.com/maczikasz/go-runs/internal/wire/backend"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"os"
 	"sync"
 )
 
@@ -19,70 +16,31 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	client, disconnectFunction := mongodb.InitializeMongoClient("mongodb://localhost:27017", "runs")
-	defer disconnectFunction()
+	config := flag.String("config", "", "Path to the config file (JSON,TOML,YAML,HCL,env, Java properties), if not set config is assumed to be YAML and read from stdin")
 
-	config, err := rules2.LoadPriorityRuleConfigFromMongodb(client)
-	//config:= initMatchers()
-	//
+	flag.Parse()
+
+	if *config == "" {
+		viper.SetConfigType("YAML")
+		err := viper.ReadConfig(os.Stdin)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		viper.SetConfigFile(*config)
+		err := viper.ReadInConfig()
+		if err != nil {
+			panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		}
+	}
+
+	viper.AutomaticEnv()
+
+	startupContext, cleanup, err := backend.InitializeStartupContext()
 	if err != nil {
-		log.Fatalf("Failed to load rule config from mongodb: %s", err)
 		panic(err.Error())
 	}
-
-	runbookDataManager := runbooks2.RunbookDataManager{Client: client}
-	runbookStepsDataManager := runbooks2.RunbookStepsDataManager{Client: client}
-	fsClient, err := client.NewGridFSClient()
-
-	if err != nil {
-		log.Fatalf("Failed to load rule config from mongodb: %s", err)
-		panic(err.Error())
-	}
-
-	resolver := runbooks.BuildNewMapRunbookMarkdownResolver(runbooks.Builder{
-		{"gridfs", runbooks.MarkdownHandlers{
-			Resolver: gridfs.MarkdownResolver{Client: &gridfs.Client{Bucket: fsClient}},
-			Writer:   gridfs.MarkdownWriter{Client: &gridfs.Client{Bucket: fsClient}}},
-		},
-	})
-
-	runbookStepDetailsFinder := runbooks.RunbookStepDetailsFinder{
-		RunbookStepsEntityFinder:    runbookStepsDataManager,
-		RunbookStepMarkdownResolver: resolver,
-	}
-
-	stepDetailsWriter := runbooks.RunbookStepDetailsWriter{
-		RunbookStepsEntityWriter:  runbookStepsDataManager,
-		RunbookStepMarkdownWriter: resolver,
-		RunbookStepEntityFinder:   runbookStepsDataManager,
-	}
-	ruleManager := rules.FromMatcherConfig(config)
-	sessionManager := mongodb2.NewMongoDBSessionManager(client)
-	runbookManager := runbooks.NewRunbookManager(ruleManager, runbookDataManager)
-	errorManager := errors.NewDefaultErrorManager(sessionManager, runbookManager)
-	startupContext := server.StartupContext{
-		RunbookDetailsFinder:     runbookDataManager,
-		SessionStore:             sessionManager,
-		RunbookStepDetailsFinder: runbookStepDetailsFinder,
-		ErrorManager:             errorManager,
-		RuleSaver:                rules2.PersistentRuleWriter{Mongo: client},
-		RuleFinder:               rules2.PersistentRuleReader{Mongo: client},
-		RuleMatcher:              ruleManager,
-		RunbookStepDetailsWriter: stepDetailsWriter,
-		RunbookDetailsWriter:     runbookDataManager,
-		ReverseRunbookFinder:     runbookDataManager,
-		RuleReloader: func() {
-
-			config, err := rules2.LoadPriorityRuleConfigFromMongodb(client)
-
-			if err != nil {
-				log.Fatalf("Failed to load rule config from mongodb: %s", err)
-				panic(err.Error())
-			}
-
-			ruleManager.ReloadFromMatcherConfig(config)
-		},
-	}
-	server.StartHttpServer(&wg, &startupContext)
+	defer cleanup()
+	server.StartHttpServer(&wg, startupContext)
 	wg.Wait()
 }
