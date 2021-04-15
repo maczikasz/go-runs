@@ -18,11 +18,19 @@ func main() {
 
 	config := flag.String("config", "", "Path to the config file (JSON,TOML,YAML,HCL,env, Java properties), if not set config is assumed to be YAML and read from stdin")
 
+	log.Debugf("App started with command line args %s", os.Args)
 	flag.Parse()
 
 	if *config == "" {
 		viper.SetConfigType("YAML")
-		err := viper.ReadConfig(os.Stdin)
+		stdInStats, err := os.Stdin.Stat()
+		if err != nil {
+			panic(err.Error())
+		}
+		if stdInStats.Size() <= 0 {
+			panic("Cannot read from empty StdIn")
+		}
+		err = viper.ReadConfig(os.Stdin)
 		if err != nil {
 			panic(err)
 		}
