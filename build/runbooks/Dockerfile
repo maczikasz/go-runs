@@ -1,12 +1,12 @@
 FROM golang:buster as builder
 
-RUN mkdir /build
-ADD cmd/runbooks /build/cmd/runbooks
-ADD internal /build/internal
-ADD go.mod /build/go.mod
-ADD go.sum /build/go.sum
+WORKDIR /build
+ADD cmd/runbooks cmd/runbooks
+ADD internal internal
+ADD go.mod go.mod
+ADD go.sum go.sum
 
-RUN cd /build/cmd/runbooks && go build
+RUN cd cmd/runbooks && go build
 
 FROM debian:buster
 COPY --from=builder /build/cmd/runbooks/runbooks /usr/bin/runbooks

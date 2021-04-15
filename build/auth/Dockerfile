@@ -1,12 +1,12 @@
 FROM golang:buster as builder
 
-RUN mkdir /build
-ADD cmd/auth /build/cmd/auth
-ADD internal /build/internal
-ADD go.mod /build/go.mod
-ADD go.sum /build/go.sum
+WORKDIR /build
+ADD cmd/auth cmd/auth
+ADD internal internal
+ADD go.mod go.mod
+ADD go.sum go.sum
 
-RUN cd /build/cmd/auth && go build
+RUN cd cmd/auth && go build
 
 FROM debian:buster
 COPY --from=builder /build/cmd/auth/auth /usr/bin/auth
